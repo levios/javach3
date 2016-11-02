@@ -256,7 +256,7 @@ public class Connection {
 	 */
 	public MoveResponse move(Integer gameId, Integer submarineId, MoveRequest request) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/move";
-		String jSONObjectAsString = sendPost(Url, null);
+		String jSONObjectAsString = sendPost(Url, request);
 		log.info(prettyfy(jSONObjectAsString));
 		return new Gson().fromJson(jSONObjectAsString,
 				MoveResponse.class);
