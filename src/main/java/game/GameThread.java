@@ -78,7 +78,9 @@ public class GameThread extends Thread {
 	private void doActuallyRun() {
 		startTime = System.nanoTime();
 
-		GameModel gameModel = conn.game();
+		GameModel gameModel = conn.createGame();
+		
+		conn.gameInfo(gameModel.getId());
 		
 		log.debug(gameModel);
 
