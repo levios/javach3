@@ -13,12 +13,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
+import org.slf4j.*;
 import javax.net.ssl.HttpsURLConnection;
 
 import model.*;
 
-import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -29,9 +28,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 public class Connection {
-
-	static Logger log = Logger.getLogger(Connection.class.getName());
-
+	static Logger log = LoggerFactory.getLogger(Connection.class);
+	
 	private static Connection connectToUrlUsingBasicAuthentication;
 	private static final String USER_AGENT = "Mozilla/5.0";
 	private static String URL_TO_READ;
@@ -46,6 +44,8 @@ public class Connection {
 	private boolean debugMode = false;
 
 	private String serverUrl;
+	
+	private static Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	public Connection(String server, String token) {
 		URL_TO_READ = server;
@@ -88,35 +88,29 @@ public class Connection {
 			conn.setRequestProperty("User-Agent", USER_AGENT);
 			conn.setRequestProperty("TEAMTOKEN", TOKEN);
 
+			log.info("Get to url [{}]", Url);
+
 			int responseCode = conn.getResponseCode();
-			// log.info("\nSending 'GET' request to URL : " + url);
-			Calendar cal = Calendar.getInstance();
-			SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
-			log.info("\n[" + sdf.format(cal.getTime()) + "]"
-					+ " sending 'GET' request to URL : " + Url);
 			if (responseCode != 200) {
-				log.info("Response Code : " + responseCode);
+				log.error("Response Code: {}", responseCode);
 			}
 
-			BufferedReader in = new BufferedReader(new InputStreamReader(
-					conn.getInputStream()));
-			String inputLine;
 			StringBuffer response = new StringBuffer();
 
-			while ((inputLine = in.readLine()) != null) {
-				response.append(inputLine);
+			try(BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))){
+				String inputLine;
+				while ((inputLine = in.readLine()) != null) {
+					response.append(inputLine);
+				}
 			}
-			in.close();
 
-			// System.out.println(response.toString());
-			return response.toString();
+			String jSONObjectAsString = response.toString();
+			log.info("Get RESPONSE: {}", prettyfy(jSONObjectAsString));
+			return jSONObjectAsString;
 
 		} catch (Exception e) {
-			if (e.getMessage().contains("503")) {
-				throw new RuntimeException(e);
-			}
-			log.error(e);
-			return "ERROR";
+			log.error(e.getMessage(), e);
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -130,7 +124,8 @@ public class Connection {
 			conn.setRequestProperty("TEAMTOKEN", TOKEN);
 
 			// Send post request
-			log.info("Post parameters: " + prettyfy(jsonData));
+			jsonData = jsonData == null ? "" : jsonData;
+			log.info("Post to url {}. INPUT {}", Url, prettyfy(jsonData));
 			conn.setDoOutput(true);
 			DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
 			wr.writeBytes(jsonData);
@@ -138,143 +133,130 @@ public class Connection {
 			wr.close();
 
 			int responseCode = conn.getResponseCode();
-			log.info("\nSending 'POST' request to URL : " + url);
-			Calendar cal = Calendar.getInstance();
-			SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
-			log.info("\n[" + sdf.format(cal.getTime()) + "]"
-					+ " sending 'POST' request to URL : " + Url);
-
 			if (responseCode != 200) {
-				log.info("Response Code : " + responseCode);
+				log.error("Response Code: {}", responseCode);
 			}
 
-			BufferedReader in = new BufferedReader(new InputStreamReader(
-					conn.getInputStream()));
-			String inputLine;
 			StringBuffer response = new StringBuffer();
 
-			while ((inputLine = in.readLine()) != null) {
-				response.append(inputLine);
+			try(BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))){
+				String inputLine;
+				while ((inputLine = in.readLine()) != null) {
+					response.append(inputLine);
+				}
 			}
-			in.close();
 
-			// System.out.println(response.toString());
-			return response.toString();
+			String jSONObjectAsString = response.toString();
+			log.info("Post RESPONSE: {}", prettyfy(jSONObjectAsString));
+			return jSONObjectAsString;
 
 		} catch (Exception e) {
-			if (e.getMessage().contains("503")) {
-				throw new RuntimeException(e);
-			}
-			log.error(e);
-			return null;
+			log.error(e.getMessage(), e);
+			throw new RuntimeException(e);
 		}
 	}
 
 	/**
-	 * POST http://server-adress:port/jc16-srv/game VALASZ: { "message": "OK",
-	 * "code": 0, "id": 1187580416 }
+	 * POST 
+	 * http://server-adress:port/jc16-srv/game
 	 */
-	public GameModel createGame() {
+	public CreateGameResponse createGame() {
 		String Url = "game";
 		String jSONObjectAsString = sendPost(Url, null);
-		log.info(prettyfy(jSONObjectAsString));
-		GameModel gameModel = new Gson().fromJson(jSONObjectAsString,
-				GameModel.class);
-		return gameModel;
+		return GSON.fromJson(jSONObjectAsString,
+				CreateGameResponse.class);
 	}
 
-	public GamesModel gameList() {
+	/**
+	 * GET
+	 * http://server-adress:port/jc16-srv/game
+	 */
+	public GamesListResponse gameList() {
 		String Url = "game";
 		String jSONObjectAsString = sendGet(Url);
-		log.info(prettyfy(jSONObjectAsString));
-		GamesModel gameModel = new Gson().fromJson(jSONObjectAsString,
-				GamesModel.class);
-		return gameModel;
+		return GSON.fromJson(jSONObjectAsString,
+				GamesListResponse.class);
 	}
 
 	/**
-	 * POST http://server-adress:port/jc16-srv/game/{gameId} 1 - Nincs a csapat
-	 * meghívva 2 - Folyamatban lévõ játék 3 - Nem létezõ gameId
+	 * POST 
+	 * http://server-adress:port/jc16-srv/game/{gameId} 
+	 * 1 - Nincs a csapat meghívva 
+	 * 2 - Folyamatban lévõ játék 
+	 * 3 - Nem létezõ gameId
 	 */
-	public GamesModel joinGame(Integer gameId) {
+	public MessageWithCodeResponse joinGame(Integer gameId) {
 		String Url = "game/" + gameId;
 		String jSONObjectAsString = sendPost(Url, null);
-		log.info(prettyfy(jSONObjectAsString));
-		GamesModel gameModel = new Gson().fromJson(jSONObjectAsString,
-				GamesModel.class);
-		return gameModel;
+		return GSON.fromJson(jSONObjectAsString,
+				MessageWithCodeResponse.class);
 	}
 
 	/**
-	 * GET http://server-adress:port/jc16-srv/game/{gameId} 3 - Nem létezõ
-	 * gameId
+	 * GET 
+	 * http://server-adress:port/jc16-srv/game/{gameId} 
+	 * 3 - Nem létezõ gameId
 	 */
-	public GameInfo gameInfo(Integer gameId) {
+	public GameInfoResponse gameInfo(Integer gameId) {
 		String Url = "game/" + gameId;
 		String jSONObjectAsString = sendGet(Url);
-		log.info(prettyfy(jSONObjectAsString));
-		GameInfo gameModel = new Gson().fromJson(jSONObjectAsString,
-				GameInfo.class);
-		return gameModel;
+		return GSON.fromJson(jSONObjectAsString,
+				GameInfoResponse.class);
 	}
 
 	/**
-	 * GET http://server-adress:port/jc16-srv/game/{gameId}/submarine 3 - Nem
-	 * létezõ gameId
+	 * GET 
+	 * http://server-adress:port/jc16-srv/game/{gameId}/submarine 
+	 * 3 - Nem létezõ gameId
 	 */
-	public Submarine submarine(Integer gameId) {
+	public SubmarineResponse submarine(Integer gameId) {
 		String Url = "game/" + gameId + "/submarine";
 		String jSONObjectAsString = sendGet(Url);
-		log.info(prettyfy(jSONObjectAsString));
-		Submarine submarine = new Gson().fromJson(jSONObjectAsString,
-				Submarine.class);
-		return submarine;
+		return GSON.fromJson(jSONObjectAsString,
+				SubmarineResponse.class);
 	}
 
 	/**
 	 * POST
-	 * http://server-adress:port/jc16-srv/game/{gameId}/submarine/{submarineId
-	 * }/move 1 - Nincs a csapat meghívva 2 - Folyamatban lévõ játék 3 - Nem
-	 * létezõ gameId
+	 * http://server-adress:port/jc16-srv/game/{gameId}/submarine/{submarineId}/move 
+	 * 1 - Nincs a csapat meghívva 
+	 * 2 - Folyamatban lévõ játék 
+	 * 3 - Nem létezõ gameId
 	 */
 	public MessageWithCodeResponse move(Integer gameId, Integer submarineId,
 			MoveRequest request) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/move";
-		Gson gson = new Gson();
-		String requestJson = gson.toJson(request);
+		String requestJson = GSON.toJson(request);
 		String jSONObjectAsString = sendPost(Url, requestJson);
-		log.info(prettyfy(jSONObjectAsString));
-		return new Gson().fromJson(jSONObjectAsString,
+		return GSON.fromJson(jSONObjectAsString,
 				MessageWithCodeResponse.class);
 	}
 
 	/**
 	 * POST
-	 * http://server-adress:port/jc16-srv/game/{gameId}/submarine/{submarineId
-	 * }/shoot 3 - Nem létezõ gameId 4 - Nincs a csapatnak jogosultsága a
-	 * megadott tengeralattjárót kezelni 7 - A torpedó cooldownon van
+	 * http://server-adress:port/jc16-srv/game/{gameId}/submarine/{submarineId}/shoot 
+	 * 3 - Nem létezõ gameId 
+	 * 4 - Nincs a csapatnak jogosultsága a megadott tengeralattjárót kezelni 
+	 * 7 - A torpedó cooldownon van
 	 */
 	public ShootResponse shoot(Integer gameId, Integer submarineId,
 			ShootRequest request) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/shoot";
-		Gson gson = new Gson();
-		String requestJson = gson.toJson(request);
+		String requestJson = GSON.toJson(request);
 		String jSONObjectAsString = sendPost(Url, requestJson);
-		log.info(prettyfy(jSONObjectAsString));
-		return new Gson().fromJson(jSONObjectAsString, ShootResponse.class);
+		return GSON.fromJson(jSONObjectAsString, ShootResponse.class);
 	}
 
 	/**
 	 * GET
-	 * http://server-adress:port/jc16-srv/game/{gameId}/submarine/{submarineId
-	 * }/sonar 3 - Nem létezõ gameId 4 - Nincs a csapatnak jogosultsága a
-	 * megadott tengeralattjárót kezelni
+	 * http://server-adress:port/jc16-srv/game/{gameId}/submarine/{submarineId}/sonar 
+	 * 3 - Nem létezõ gameId 
+	 * 4 - Nincs a csapatnak jogosultsága a megadott tengeralattjárót kezelni
 	 */
 	public SonarResponse sonar(Integer gameId, Integer submarineId) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/sonar";
 		String jSONObjectAsString = sendGet(Url);
-		log.info(prettyfy(jSONObjectAsString));
-		return new Gson().fromJson(jSONObjectAsString, SonarResponse.class);
+		return GSON.fromJson(jSONObjectAsString, SonarResponse.class);
 	}
 
 	/**
@@ -288,16 +270,14 @@ public class Connection {
 			Integer submarineId) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/sonar";
 		String jSONObjectAsString = sendPost(Url, null);
-		log.info(prettyfy(jSONObjectAsString));
-		return new Gson().fromJson(jSONObjectAsString,
+		return GSON.fromJson(jSONObjectAsString,
 				MessageWithCodeResponse.class);
 	}
 
 	private String prettyfy(String uglyJSONString) {
-		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		JsonParser jp = new JsonParser();
 		JsonElement je = jp.parse(uglyJSONString);
-		String prettyJsonString = gson.toJson(je);
+		String prettyJsonString = GSON.toJson(je);
 		return prettyJsonString;
 	}
 

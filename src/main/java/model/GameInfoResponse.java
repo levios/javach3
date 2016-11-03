@@ -6,14 +6,17 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @Generated("org.jsonschema2pojo")
-public class IslandPosition {
+public class GameInfoResponse {
 
-	@SerializedName("x")
+	@SerializedName("game")
 	@Expose
-	public Integer x;
-	@SerializedName("y")
+	public Game game;
+	@SerializedName("message")
 	@Expose
-	public Integer y;
+	public String message;
+	@SerializedName("code")
+	@Expose
+	public Integer code;
 
 	@Override
 	public String toString() {
