@@ -18,7 +18,7 @@ public class MapConfiguration {
 	public Integer height;
 	@SerializedName("islandPositions")
 	@Expose
-	public List<IslandPosition> islandPositions = new ArrayList<IslandPosition>();
+	public List<Position> islandPositions = new ArrayList<Position>();
 	@SerializedName("teamCount")
 	@Expose
 	public Integer teamCount;

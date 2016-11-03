@@ -1,21 +1,8 @@
 package game;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import model.GameInfo;
-import model.GameModel;
-
 import org.apache.log4j.Logger;
 
 import connection.Connection;
@@ -62,7 +49,7 @@ public class GameThread extends Thread {
 		try{
 			doActuallyRun();
 		} catch (RuntimeException e){
-			log.error("I should have stopped");
+			e.printStackTrace();
 		} catch (Exception e) {
 			log.error(e);
 			e.printStackTrace();

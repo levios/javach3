@@ -11,7 +11,7 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @Generated("org.jsonschema2pojo")
-public class Submarines {
+public class SubmarineResponse {
 
 	@SerializedName("submarines")
 	@Expose

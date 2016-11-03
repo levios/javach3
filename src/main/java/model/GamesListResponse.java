@@ -8,7 +8,7 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @Generated("org.jsonschema2pojo")
-public class GamesModel {
+public class GamesListResponse {
 
 	@SerializedName("games")
 	@Expose

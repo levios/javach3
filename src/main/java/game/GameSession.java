@@ -6,8 +6,6 @@ import connection.Connection;
 import model.ConnectionStatus;
 import model.ErrorCode;
 import model.Game;
-import model.GameModel;
-import model.GamesModel;
 import model.MapConfiguration;
 
 import static model.ErrorCode.*;

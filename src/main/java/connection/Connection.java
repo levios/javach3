@@ -13,12 +13,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
+import org.slf4j.*;
 import javax.net.ssl.HttpsURLConnection;
 
 import model.*;
 
-import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -31,9 +30,8 @@ import com.google.gson.JsonParser;
 import static model.ErrorCode.*;
 
 public class Connection {
-
-	static Logger log = Logger.getLogger(Connection.class.getName());
-
+	static Logger log = LoggerFactory.getLogger(Connection.class);
+	
 	private static Connection connectToUrlUsingBasicAuthentication;
 	private static final String USER_AGENT = "Mozilla/5.0";
 	private static String URL_TO_READ;
@@ -48,6 +46,8 @@ public class Connection {
 	private boolean debugMode = false;
 
 	private String serverUrl;
+	
+	private static Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	public Connection(String server, String token) {
 		URL_TO_READ = server;
@@ -91,33 +91,29 @@ public class Connection {
 			conn.setRequestProperty("User-Agent", USER_AGENT);
 			conn.setRequestProperty("TEAMTOKEN", TOKEN);
 
-			int responseCode = conn.getResponseCode();
-			// log.info("\nSending 'GET' request to URL : " + url);
-			Calendar cal = Calendar.getInstance();
-			SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
-			log.info("\n[" + sdf.format(cal.getTime()) + "]" + " sending 'GET' request to URL : " + Url);
-			if (responseCode != 200) {
-				log.info("Response Code : " + responseCode);
-			}
+			log.info("Get to url [{}]", Url);
 
-			BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-			String inputLine;
+			int responseCode = conn.getResponseCode();
+			if (responseCode != 200) {
+				log.error("Response Code: {}", responseCode);
+			}
+			
 			StringBuffer response = new StringBuffer();
 
-			while ((inputLine = in.readLine()) != null) {
-				response.append(inputLine);
+			try(BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))){
+				String inputLine;
+				while ((inputLine = in.readLine()) != null) {
+					response.append(inputLine);
+				}
 			}
-			in.close();
 
-			// System.out.println(response.toString());
-			return response.toString();
+			String jSONObjectAsString = response.toString();
+			log.info("Get RESPONSE: {}", prettify(jSONObjectAsString));
+			return jSONObjectAsString;
 
 		} catch (Exception e) {
-			if (e.getMessage().contains("503")) {
-				throw new RuntimeException(e);
-			}
-			log.error(e);
-			return "ERROR";
+			log.error(e.getMessage(), e);
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -131,7 +127,8 @@ public class Connection {
 			conn.setRequestProperty("TEAMTOKEN", TOKEN);
 
 			// Send post request
-			log.info("Post parameters: " + prettify(jsonData));
+			jsonData = jsonData == null ? "" : jsonData;
+			log.info("Post to url {}. INPUT {}", Url, prettify(jsonData));
 			conn.setDoOutput(true);
 			DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
 			wr.writeBytes(jsonData);
@@ -139,49 +136,38 @@ public class Connection {
 			wr.close();
 
 			int responseCode = conn.getResponseCode();
-			log.info("\nSending 'POST' request to URL : " + url);
-			Calendar cal = Calendar.getInstance();
-			SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
-			log.info("\n[" + sdf.format(cal.getTime()) + "]" + " sending 'POST' request to URL : " + Url);
-
 			if (responseCode != 200) {
-				log.info("Response Code : " + responseCode);
+				log.error("Response Code: {}", responseCode);
 			}
 
-			BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-			String inputLine;
+
 			StringBuffer response = new StringBuffer();
 
-			while ((inputLine = in.readLine()) != null) {
-				response.append(inputLine);
+			try(BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))){
+				String inputLine;
+				while ((inputLine = in.readLine()) != null) {
+					response.append(inputLine);
+				}
 			}
-			in.close();
 
-			// System.out.println(response.toString());
-			return response.toString();
+			String jSONObjectAsString = response.toString();
+			log.info("Post RESPONSE: {}", prettify(jSONObjectAsString));
+			return jSONObjectAsString;
 
 		} catch (Exception e) {
-			if (e.getMessage().contains("503")) {
-				throw new RuntimeException(e);
-			}
-			log.error(e);
-			return null;
+			log.error(e.getMessage(), e);
+			throw new RuntimeException(e);
 		}
 	}
 
 	/**
-	 * POST http://server-adress:port/jc16-srv/game
-	 *  VALASZ: { 
-	 *    "message": "OK",
-	 *    "code": 0,
-	 *    "id": 1187580416
-	 *  }
+	 * POST 
+	 * http://server-adress:port/jc16-srv/game
 	 */
 	public Integer createGame() {
 		String Url = "game";
 		String jSONObjectAsString = sendPost(Url, null);
-		log.info(prettify(jSONObjectAsString));
-		GameModel gameModel = new Gson().fromJson(jSONObjectAsString, GameModel.class);
+		CreateGameResponse gameModel = GSON.fromJson(jSONObjectAsString, CreateGameResponse.class);
 
 		ErrorCode c = ErrorCode.fromCode(gameModel.getCode());
 		if (c != OK) {
@@ -192,15 +178,18 @@ public class Connection {
 		}
 	}
 
-	public List<Integer> gameList() {
+	/**
+	 * GET
+	 * http://server-adress:port/jc16-srv/game
+	 */
+	 public List<Integer> gameList() {
 		String Url = "game";
 		String jSONObjectAsString = sendGet(Url);
-		log.info(prettify(jSONObjectAsString));
-		GamesModel gameModel = new Gson().fromJson(jSONObjectAsString, GamesModel.class);
+		GamesListResponse gamesListResponse = GSON.fromJson(jSONObjectAsString, GamesListResponse.class);
 
-		ErrorCode c = ErrorCode.fromCode(gameModel.getCode());
+		ErrorCode c = ErrorCode.fromCode(gamesListResponse.getCode());
 		if (c == OK) {
-			return gameModel.getGames();
+			return gamesListResponse.getGames();
 		} else {
 			return new ArrayList<Integer>();
 		}
@@ -215,8 +204,7 @@ public class Connection {
 	public ErrorCode joinGame(Integer gameId) {
 		String Url = "game/" + gameId;
 		String jSONObjectAsString = sendPost(Url, null);
-		log.info(prettify(jSONObjectAsString));
-		MessageWithCodeResponse joinResult = new Gson().fromJson(jSONObjectAsString, MessageWithCodeResponse.class);
+		MessageWithCodeResponse joinResult = GSON.fromJson(jSONObjectAsString, MessageWithCodeResponse.class);
 
 		ErrorCode errorCode = ErrorCode.fromCode(joinResult.code);
 		return errorCode;
@@ -229,8 +217,7 @@ public class Connection {
 	public Game gameInfo(Integer gameId) {
 		String Url = "game/" + gameId;
 		String jSONObjectAsString = sendGet(Url);
-		log.info(prettify(jSONObjectAsString));
-		GameInfo gameModel = new Gson().fromJson(jSONObjectAsString, GameInfo.class);
+		GameInfoResponse gameModel = GSON.fromJson(jSONObjectAsString, GameInfoResponse.class);
 
 		ErrorCode errorCode = ErrorCode.fromCode(gameModel.code);
 		if (errorCode == OK) {
@@ -250,7 +237,7 @@ public class Connection {
 		String Url = "game/" + gameId + "/submarine";
 		String jSONObjectAsString = sendGet(Url);
 		log.info(prettify(jSONObjectAsString));
-		Submarines submarines = new Gson().fromJson(jSONObjectAsString, Submarines.class);
+		SubmarineResponse submarines = GSON.fromJson(jSONObjectAsString, SubmarineResponse.class);
 
 		ErrorCode errorCode = ErrorCode.fromCode(submarines.code);
 		if (errorCode == OK) {
@@ -274,11 +261,9 @@ public class Connection {
 	 */
 	public ErrorCode move(Integer gameId, Integer submarineId, MoveRequest request) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/move";
-		Gson gson = new Gson();
-		String requestJson = gson.toJson(request);
+		String requestJson = GSON.toJson(request);
 		String jSONObjectAsString = sendPost(Url, requestJson);
-		log.info(prettify(jSONObjectAsString));
-		MessageWithCodeResponse moveResponse = new Gson().fromJson(jSONObjectAsString, MessageWithCodeResponse.class);
+		MessageWithCodeResponse moveResponse = GSON.fromJson(jSONObjectAsString, MessageWithCodeResponse.class);
 
 		ErrorCode errorCode = ErrorCode.fromCode(moveResponse.code);
 		return errorCode;
@@ -293,10 +278,8 @@ public class Connection {
 	 */
 	public ErrorCode shoot(Integer gameId, Integer submarineId, ShootRequest request) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/shoot";
-		Gson gson = new Gson();
-		String requestJson = gson.toJson(request);
+		String requestJson = GSON.toJson(request);
 		String jSONObjectAsString = sendPost(Url, requestJson);
-		log.info(prettify(jSONObjectAsString));
 		ShootResponse shootResponse = new Gson().fromJson(jSONObjectAsString, ShootResponse.class);
 
 		ErrorCode errorCode = ErrorCode.fromCode(shootResponse.code);
@@ -312,8 +295,7 @@ public class Connection {
 	public List<Entity> sonar(Integer gameId, Integer submarineId) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/sonar";
 		String jSONObjectAsString = sendGet(Url);
-		log.info(prettify(jSONObjectAsString));
-		SonarResponse sonarResponse = new Gson().fromJson(jSONObjectAsString, SonarResponse.class);
+		SonarResponse sonarResponse = GSON.fromJson(jSONObjectAsString, SonarResponse.class);
 
 		ErrorCode errorCode = ErrorCode.fromCode(sonarResponse.code);
 		if (errorCode == OK) {
@@ -333,8 +315,7 @@ public class Connection {
 	public ErrorCode extendSonar(Integer gameId, Integer submarineId) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/sonar";
 		String jSONObjectAsString = sendPost(Url, null);
-		log.info(prettify(jSONObjectAsString));
-		MessageWithCodeResponse sonarActivationResult = new Gson().fromJson(jSONObjectAsString,
+		MessageWithCodeResponse sonarActivationResult = GSON.fromJson(jSONObjectAsString,
 				MessageWithCodeResponse.class);
 
 		ErrorCode errorCode = ErrorCode.fromCode(sonarActivationResult.code);
