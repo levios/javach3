@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import model.GameInfo;
 import model.GameModel;
 
 import org.apache.log4j.Logger;
@@ -62,6 +63,9 @@ public class GameThread extends Thread {
 			doActuallyRun();
 		} catch (RuntimeException e){
 			log.error("I should have stopped");
+		} catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
 		} finally {
 		
 			log.info("**********************************************");
@@ -75,14 +79,14 @@ public class GameThread extends Thread {
 		}
 	}
 
-	private void doActuallyRun() {
+	private void doActuallyRun() throws Exception {
 		startTime = System.nanoTime();
-
-		GameModel gameModel = conn.createGame();
 		
-		conn.gameInfo(gameModel.getId());
+		GameSession game = new GameSession(conn);
 		
-		log.debug(gameModel);
+		game.start();
+		
+		log.debug(game.getStatusInfo());
 
 		/************ FOCIKLUS ************/
 		while ( (System.nanoTime() - startTime) < TEST_LENGTH_IN_NANOSEC) {
