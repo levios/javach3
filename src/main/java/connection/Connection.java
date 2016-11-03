@@ -16,17 +16,7 @@ import java.util.Map.Entry;
 
 import javax.net.ssl.HttpsURLConnection;
 
-import model.GameInfo;
-import model.GameModel;
-//import models.DropPackageModel;
-//import models.GoModel;
-//import models.PickPackageModel;
-//import models.WhereIsModel;
-
-import model.GamesModel;
-import model.MoveRequest;
-import model.MoveResponse;
-import model.Submarine;
+import model.*;
 
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
@@ -130,7 +120,7 @@ public class Connection {
 		}
 	}
 
-	public String sendPost(String Url, JSONObject data) {
+	public String sendPost(String Url, String jsonData) {
 		HttpURLConnection conn;
 		try {
 			url = new URL(URL_TO_READ + Url);
@@ -140,10 +130,10 @@ public class Connection {
 			conn.setRequestProperty("TEAMTOKEN", TOKEN);
 
 			// Send post request
-			log.info("Post parameters: " + prettyfy(data.toString()));
+			log.info("Post parameters: " + prettyfy(jsonData));
 			conn.setDoOutput(true);
 			DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
-			wr.writeBytes(data.toString());
+			wr.writeBytes(jsonData);
 			wr.flush();
 			wr.close();
 
@@ -153,7 +143,7 @@ public class Connection {
 			SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 			log.info("\n[" + sdf.format(cal.getTime()) + "]"
 					+ " sending 'POST' request to URL : " + Url);
-			
+
 			if (responseCode != 200) {
 				log.info("Response Code : " + responseCode);
 			}
@@ -181,9 +171,8 @@ public class Connection {
 	}
 
 	/**
-	 * POST
-	 * http://server-adress:port/jc16-srv/game
-	 * VALASZ: { "message": "OK", "code": 0, "id": 1187580416 }
+	 * POST http://server-adress:port/jc16-srv/game VALASZ: { "message": "OK",
+	 * "code": 0, "id": 1187580416 }
 	 */
 	public GameModel createGame() {
 		String Url = "game";
@@ -193,7 +182,7 @@ public class Connection {
 				GameModel.class);
 		return gameModel;
 	}
-	
+
 	public GamesModel gameList() {
 		String Url = "game";
 		String jSONObjectAsString = sendGet(Url);
@@ -202,13 +191,10 @@ public class Connection {
 				GamesModel.class);
 		return gameModel;
 	}
-	
+
 	/**
-	 * POST 
-	 * http://server-adress:port/jc16-srv/game/{gameId} 
-	 * 1 - Nincs a csapat meghívva 
-	 * 2 - Folyamatban lévõ játék 
-	 * 3 - Nem létezõ gameId
+	 * POST http://server-adress:port/jc16-srv/game/{gameId} 1 - Nincs a csapat
+	 * meghívva 2 - Folyamatban lévõ játék 3 - Nem létezõ gameId
 	 */
 	public GamesModel joinGame(Integer gameId) {
 		String Url = "game/" + gameId;
@@ -218,11 +204,10 @@ public class Connection {
 				GamesModel.class);
 		return gameModel;
 	}
-	
+
 	/**
-	 * GET 
-	 * http://server-adress:port/jc16-srv/game/{gameId} 
-	 * 3 - Nem létezõ gameId
+	 * GET http://server-adress:port/jc16-srv/game/{gameId} 3 - Nem létezõ
+	 * gameId
 	 */
 	public GameInfo gameInfo(Integer gameId) {
 		String Url = "game/" + gameId;
@@ -234,9 +219,8 @@ public class Connection {
 	}
 
 	/**
-	 * GET 
-	 * http://server-adress:port/jc16-srv/game/{gameId}/submarine
-	 * 3 - Nem létezõ gameId
+	 * GET http://server-adress:port/jc16-srv/game/{gameId}/submarine 3 - Nem
+	 * létezõ gameId
 	 */
 	public Submarine submarine(Integer gameId) {
 		String Url = "game/" + gameId + "/submarine";
@@ -246,22 +230,69 @@ public class Connection {
 				Submarine.class);
 		return submarine;
 	}
-	
+
 	/**
 	 * POST
-	 * http://server-adress:port/jc16-srv/game/{gameId}/submarine/{submarineId}/move
-	 * 1 - Nincs a csapat meghívva 
-	 * 2 - Folyamatban lévõ játék 
-	 * 3 - Nem létezõ gameId
+	 * http://server-adress:port/jc16-srv/game/{gameId}/submarine/{submarineId
+	 * }/move 1 - Nincs a csapat meghívva 2 - Folyamatban lévõ játék 3 - Nem
+	 * létezõ gameId
 	 */
-	public MoveResponse move(Integer gameId, Integer submarineId, MoveRequest request) {
+	public MessageWithCodeResponse move(Integer gameId, Integer submarineId,
+			MoveRequest request) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/move";
-		String jSONObjectAsString = sendPost(Url, request);
+		Gson gson = new Gson();
+		String requestJson = gson.toJson(request);
+		String jSONObjectAsString = sendPost(Url, requestJson);
 		log.info(prettyfy(jSONObjectAsString));
 		return new Gson().fromJson(jSONObjectAsString,
-				MoveResponse.class);
+				MessageWithCodeResponse.class);
 	}
-	
+
+	/**
+	 * POST
+	 * http://server-adress:port/jc16-srv/game/{gameId}/submarine/{submarineId
+	 * }/shoot 3 - Nem létezõ gameId 4 - Nincs a csapatnak jogosultsága a
+	 * megadott tengeralattjárót kezelni 7 - A torpedó cooldownon van
+	 */
+	public ShootResponse shoot(Integer gameId, Integer submarineId,
+			ShootRequest request) {
+		String Url = "game/" + gameId + "/submarine/" + submarineId + "/shoot";
+		Gson gson = new Gson();
+		String requestJson = gson.toJson(request);
+		String jSONObjectAsString = sendPost(Url, requestJson);
+		log.info(prettyfy(jSONObjectAsString));
+		return new Gson().fromJson(jSONObjectAsString, ShootResponse.class);
+	}
+
+	/**
+	 * GET
+	 * http://server-adress:port/jc16-srv/game/{gameId}/submarine/{submarineId
+	 * }/sonar 3 - Nem létezõ gameId 4 - Nincs a csapatnak jogosultsága a
+	 * megadott tengeralattjárót kezelni
+	 */
+	public SonarResponse sonar(Integer gameId, Integer submarineId) {
+		String Url = "game/" + gameId + "/submarine/" + submarineId + "/sonar";
+		String jSONObjectAsString = sendGet(Url);
+		log.info(prettyfy(jSONObjectAsString));
+		return new Gson().fromJson(jSONObjectAsString, SonarResponse.class);
+	}
+
+	/**
+	 * POST
+	 * http://server-adress:port/jc16-srv/game/{gameId}/submarine/{submarineId}/sonar 
+	 * 3 - Nem létezõ gameId
+	 * 4 - Nincs a csapatnak jogosultsága a megadott tengeralattjárót kezelni
+	 * 8 - Újratöltõdés elõtti hívás
+	 */
+	public MessageWithCodeResponse extendSonar(Integer gameId,
+			Integer submarineId) {
+		String Url = "game/" + gameId + "/submarine/" + submarineId + "/sonar";
+		String jSONObjectAsString = sendPost(Url, null);
+		log.info(prettyfy(jSONObjectAsString));
+		return new Gson().fromJson(jSONObjectAsString,
+				MessageWithCodeResponse.class);
+	}
+
 	private String prettyfy(String uglyJSONString) {
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		JsonParser jp = new JsonParser();
@@ -269,146 +300,6 @@ public class Connection {
 		String prettyJsonString = gson.toJson(je);
 		return prettyJsonString;
 	}
-
-//	/**
-//	 * VALASZ: { status: "PACKAGE_PICKED" (enum) remainingCapacity: 2 (Integer)
-//	 * }
-//	 */
-//	public PickPackageModel pickPackage(Integer packageId) {
-//		String Url = "pickPackage";
-//		HashMap<String, String> map = new HashMap<String, String>();
-//		map.put("packageId", packageId.toString());
-//		String ret = sendPost(Url, map);
-//
-//		JSONObject obj = new JSONObject(ret);
-//		// sendIOMessage("PICKRESULT", obj);
-//
-//		PickStatus pStatus = PickStatus.valueOf(obj.getString("status"));
-//
-//		Integer remainingCapacity = null;
-//		if (obj.get("remainingCapacity").toString() != "null")
-//			remainingCapacity = Integer.parseInt(obj.get("remainingCapacity")
-//					.toString());
-//
-//		log.info("status: " + pStatus + "\nremainingCapacity: "
-//				+ remainingCapacity);
-//
-//		PickPackageModel model = new PickPackageModel();
-//		model.setpStatus(pStatus);
-//		model.setRemainingCapacity(remainingCapacity);
-//		return model;
-//	}
-//
-//	/**
-//	 * VALASZ: { status: "PACKAGE_DROPPED" (enum) scoreIncrease: 0 (int) }
-//	 */
-//	public DropPackageModel dropPackage(Integer packageId) {
-//		String Url = "dropPackage";
-//		HashMap<String, String> map = new HashMap<String, String>();
-//		map.put("packageId", packageId.toString());
-//		String ret = sendPost(Url, map);
-//
-//		JSONObject obj = new JSONObject(ret);
-//		// sendIOMessage("DROPRESULT", obj);
-//
-//		DropStatus dStatus = DropStatus.valueOf(obj.getString("status"));
-//		int scoreIncrease = obj.getInt("scoreIncrease");
-//
-//		log.info("status: " + dStatus + "\nscoreIncrease: " + scoreIncrease);
-//
-//		DropPackageModel model = new DropPackageModel();
-//		model.setdStatus(dStatus);
-//		model.setScoreIncrease(scoreIncrease);
-//		return model;
-//	}
-//
-//	/**
-//	 * VALASZ: { status: "MOVING" , (enum) arriveAfterMs: 46000 , (Integer)
-//	 * destination: "Tarantulon 6" (String) }
-//	 */
-//	public GoModel go(String destination) {
-//		String Url = "go";
-//		HashMap<String, String> map = new HashMap<String, String>();
-//		map.put("planetName", destination);
-//		String ret = sendPost(Url, map);
-//
-//		JSONObject obj = new JSONObject(ret);
-//		// sendIOMessage("GORESULT", obj);
-//
-//		GoStatus goStatus = GoStatus.valueOf(obj.getString("status"));
-//		Integer arriveTime = null;
-//		if (obj.get("arriveAfterMs").toString() != "null")
-//			arriveTime = Integer.parseInt(obj.get("arriveAfterMs").toString());
-//		String dest = null;
-//		if (obj.get("destination").toString() != "null")
-//			dest = obj.getString("destination");
-//
-//		log.info("status: " + goStatus + "\narriveAfterMs: " + arriveTime
-//				+ "\ndestination: " + dest);
-//
-//		GoModel model = new GoModel();
-//		model.setArriveTime(arriveTime);
-//		model.setDest(dest);
-//		model.setGoStatus(goStatus);
-//		return model;
-//	}
-//
-//	/**
-//	 * VALASZ: { "planets": [ { "name":"Amazonia", "x":63.0, "y":6.0,
-//	 * "packages": [ { packageId: 1370, originalPlanet: "Amazonia" targetPlanet:
-//	 * "Stumbos IV" text: "atomreaktor" actualPlanet: "Amazonia" fee: 29 } ] } ]
-//	 * }
-//	 */
-//	public List<Planet> getGalaxy() {
-//		String Url = "getGalaxy";
-//		String ret = sendGet(Url);
-//
-//		JSONObject obj = new JSONObject(ret);
-//		// sendIOMessage("SOW", obj);
-//
-//		List<Planet> planets = new ArrayList<Planet>();
-//
-//		JSONArray arr = obj.getJSONArray("planets");
-//		for (int i = 0; i < arr.length(); i++) {
-//			String planetName = arr.getJSONObject(i).getString("name");
-//			double x = arr.getJSONObject(i).getDouble("x");
-//			double y = arr.getJSONObject(i).getDouble("y");
-//
-//			Planet planet = new Planet();
-//			planet.setName(planetName);
-//			planet.setX(x);
-//			planet.setY(y);
-//
-//			JSONArray pac = arr.getJSONObject(i).getJSONArray("packages");
-//			for (int j = 0; j < pac.length(); j++) {
-//				int packageId = pac.getJSONObject(j).getInt("packageId");
-//				String originalPlanet = pac.getJSONObject(j).getString(
-//						"originalPlanet");
-//				String targetPlanet = pac.getJSONObject(j).getString(
-//						"targetPlanet");
-//				String text = pac.getJSONObject(j).getString("text");
-//				String actualPlanet = pac.getJSONObject(j).getString(
-//						"actualPlanet");
-//				int fee = pac.getJSONObject(j).getInt("fee");
-//
-//				Package pack = new Package();
-//				pack.setActualPlanet(actualPlanet);
-//				pack.setFee(fee);
-//				pack.setOriginalPlanet(originalPlanet);
-//				pack.setPackageId(packageId);
-//				pack.setTargetPlanet(targetPlanet);
-//				pack.setText(text);
-//				planet.add(pack);
-//			}
-//
-//			planets.add(planet);
-//		}
-//
-//		// for( Planet i : planets){
-//		// log.info(i.toString());
-//		// }
-//		return planets;
-//	}
 
 	// public static Connection instance(String server, String username, String
 	// pw) {
