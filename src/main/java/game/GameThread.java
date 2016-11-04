@@ -27,8 +27,8 @@ public class GameThread extends Thread {
 	private static final boolean INSTA_EXPRESS_ACTIONS = true;
 	public static final Integer[] VELOCITY = (Integer[])Arrays.asList(170,150,130,110).toArray();
 
-	public GameThread(boolean isDebug, String server, String token) {
-		conn = new Connection(server,token);
+	public GameThread(boolean isDebug, String server) {
+		conn = new Connection(server);
 		this.isDebug = isDebug;
 
 		log.info("**********************************************");

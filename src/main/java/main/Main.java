@@ -9,7 +9,7 @@ public class Main {
 		try {
 			//Thread game = new LeviThread(args[0], args[1], args[2]);
 			//System.out.println("Starting game with parameters:" + args[0] + ", " + args[1] + ", " +args[2]);
-			Thread game = new GameThread(false,args[0],args[1]);
+			Thread game = new GameThread(false, args[0]);
 			game.run();	
 		} catch (Exception e) {
 			e.printStackTrace();

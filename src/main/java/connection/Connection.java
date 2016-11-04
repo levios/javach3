@@ -38,7 +38,7 @@ public class Connection {
 	private static final String URL_TO_READ_DBG = "http://localhost:3000";
 	private static final String DISPLAY_SERVER_URL = "http://javach-delanni.c9.io/";
 	private static final String DISPLAY_SERVER_URL_DBG = "http://localhost:3000";
-	private static String TOKEN;
+	private static String TOKEN = "8AEB9295F1223DB1D89B55980770DD8B";
 	private URL url;
 
 	private Socket io;
@@ -49,9 +49,8 @@ public class Connection {
 	
 	private static Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-	public Connection(String server, String token) {
+	public Connection(String server) {
 		URL_TO_READ = server;
-		Connection.TOKEN = token;
 		this.serverUrl = this.debugMode ? URL_TO_READ_DBG : URL_TO_READ;
 
 		if (this.debugMode) {
@@ -82,7 +81,7 @@ public class Connection {
 		}
 	}
 
-	public String sendGet(String Url) {
+	public String sendGet(String topic, String Url) {
 		HttpURLConnection conn;
 		try {
 			url = new URL(this.serverUrl + Url);
@@ -108,6 +107,8 @@ public class Connection {
 			}
 
 			String jSONObjectAsString = response.toString();
+			io.emit(topic, jSONObjectAsString);
+			
 			log.info("Get RESPONSE: {}", prettify(jSONObjectAsString));
 			return jSONObjectAsString;
 
@@ -117,7 +118,7 @@ public class Connection {
 		}
 	}
 
-	public String sendPost(String Url, String jsonData) {
+	public String sendPost(String topic, String Url, String jsonData) {
 		HttpURLConnection conn;
 		try {
 			url = new URL(URL_TO_READ + Url);
@@ -151,6 +152,9 @@ public class Connection {
 			}
 
 			String jSONObjectAsString = response.toString();
+			
+			io.emit(topic, jSONObjectAsString);
+			
 			log.info("Post RESPONSE: {}", prettify(jSONObjectAsString));
 			return jSONObjectAsString;
 
@@ -166,7 +170,7 @@ public class Connection {
 	 */
 	public Integer createGame() {
 		String Url = "game";
-		String jSONObjectAsString = sendPost(Url, null);
+		String jSONObjectAsString = sendPost("createGame", Url, null);
 		CreateGameResponse gameModel = GSON.fromJson(jSONObjectAsString, CreateGameResponse.class);
 
 		ErrorCode c = ErrorCode.fromCode(gameModel.getCode());
@@ -184,7 +188,7 @@ public class Connection {
 	 */
 	 public List<Integer> gameList() {
 		String Url = "game";
-		String jSONObjectAsString = sendGet(Url);
+		String jSONObjectAsString = sendGet("gameList", Url);
 		GamesListResponse gamesListResponse = GSON.fromJson(jSONObjectAsString, GamesListResponse.class);
 
 		ErrorCode c = ErrorCode.fromCode(gamesListResponse.getCode());
@@ -203,7 +207,7 @@ public class Connection {
 	 */
 	public ErrorCode joinGame(Integer gameId) {
 		String Url = "game/" + gameId;
-		String jSONObjectAsString = sendPost(Url, null);
+		String jSONObjectAsString = sendPost("joinGame", Url, null);
 		MessageWithCodeResponse joinResult = GSON.fromJson(jSONObjectAsString, MessageWithCodeResponse.class);
 
 		ErrorCode errorCode = ErrorCode.fromCode(joinResult.code);
@@ -216,7 +220,7 @@ public class Connection {
 	 */
 	public Game gameInfo(Integer gameId) {
 		String Url = "game/" + gameId;
-		String jSONObjectAsString = sendGet(Url);
+		String jSONObjectAsString = sendGet("gameInfo", Url);
 		GameInfoResponse gameModel = GSON.fromJson(jSONObjectAsString, GameInfoResponse.class);
 
 		ErrorCode errorCode = ErrorCode.fromCode(gameModel.code);
@@ -235,7 +239,7 @@ public class Connection {
 	 */
 	public List<Submarine> submarine(Integer gameId) {
 		String Url = "game/" + gameId + "/submarine";
-		String jSONObjectAsString = sendGet(Url);
+		String jSONObjectAsString = sendGet("submarine", Url);
 		log.info(prettify(jSONObjectAsString));
 		SubmarineResponse submarines = GSON.fromJson(jSONObjectAsString, SubmarineResponse.class);
 
@@ -262,7 +266,7 @@ public class Connection {
 	public ErrorCode move(Integer gameId, Integer submarineId, MoveRequest request) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/move";
 		String requestJson = GSON.toJson(request);
-		String jSONObjectAsString = sendPost(Url, requestJson);
+		String jSONObjectAsString = sendPost("move", Url, requestJson);
 		MessageWithCodeResponse moveResponse = GSON.fromJson(jSONObjectAsString, MessageWithCodeResponse.class);
 
 		ErrorCode errorCode = ErrorCode.fromCode(moveResponse.code);
@@ -279,7 +283,7 @@ public class Connection {
 	public ErrorCode shoot(Integer gameId, Integer submarineId, ShootRequest request) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/shoot";
 		String requestJson = GSON.toJson(request);
-		String jSONObjectAsString = sendPost(Url, requestJson);
+		String jSONObjectAsString = sendPost("shoot", Url, requestJson);
 		ShootResponse shootResponse = new Gson().fromJson(jSONObjectAsString, ShootResponse.class);
 
 		ErrorCode errorCode = ErrorCode.fromCode(shootResponse.code);
@@ -294,7 +298,7 @@ public class Connection {
 	 */
 	public List<Entity> sonar(Integer gameId, Integer submarineId) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/sonar";
-		String jSONObjectAsString = sendGet(Url);
+		String jSONObjectAsString = sendGet("sonar", Url);
 		SonarResponse sonarResponse = GSON.fromJson(jSONObjectAsString, SonarResponse.class);
 
 		ErrorCode errorCode = ErrorCode.fromCode(sonarResponse.code);
@@ -314,7 +318,7 @@ public class Connection {
 	 */
 	public ErrorCode extendSonar(Integer gameId, Integer submarineId) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/sonar";
-		String jSONObjectAsString = sendPost(Url, null);
+		String jSONObjectAsString = sendPost("extendSonar", Url, null);
 		MessageWithCodeResponse sonarActivationResult = GSON.fromJson(jSONObjectAsString,
 				MessageWithCodeResponse.class);
 
