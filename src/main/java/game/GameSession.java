@@ -20,6 +20,7 @@ public class GameSession {
 	private ConnectionStatus connectionStatus;
 	private Integer myScore;
 	private Integer round;
+	private GameMap map;
 
 	public GameSession(Connection connection) {
 		this.connection = connection;
@@ -52,7 +53,7 @@ public class GameSession {
 
 	private void initialize() {
 		this.updateGameInfo();
-		
+
 		//
 	}
 
@@ -63,14 +64,11 @@ public class GameSession {
 		this.round = gameInfo.round;
 		this.myScore = gameInfo.scores.scores.myScore;
 		this.mapConfiguration = gameInfo.mapConfiguration;
-		this.updateMapInfo(gameInfo.mapConfiguration);
+		this.map = new GameMap(gameInfo.mapConfiguration);
+		
 		this.connectionStatus = gameInfo.connectionStatus;
 		// this.updateConnectionInfo(gameInfo.connectionStatus);
 		this.evaluateStatus(gameInfo.status);
-	}
-
-	private void updateMapInfo(MapConfiguration mapConfiguration) {
-		
 	}
 
 	private void evaluateStatus(String status) {
@@ -78,7 +76,7 @@ public class GameSession {
 		case "WAITING":
 			break;
 		case "RUNNING":
-			if (this.state != GameState.RUNNING){
+			if (this.state != GameState.RUNNING) {
 				// TODO: Kaki van, a jatek megy, mi meg nem
 			}
 			break;
@@ -92,7 +90,7 @@ public class GameSession {
 
 	private void gracefullyStop() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	private void joinGame(Integer id) throws Exception {

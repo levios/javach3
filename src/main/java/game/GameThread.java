@@ -78,7 +78,6 @@ public class GameThread extends Thread {
 		/************ FOCIKLUS ************/
 		while ( (System.nanoTime() - startTime) < TEST_LENGTH_IN_NANOSEC) {
 			
-			
 			cycleStartTime = System.nanoTime();
 			
 		}
