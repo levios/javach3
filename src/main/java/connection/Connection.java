@@ -5,20 +5,12 @@ import java.io.DataOutputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import org.slf4j.*;
-import javax.net.ssl.HttpsURLConnection;
 
 import model.*;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.github.nkzawa.socketio.client.*;
@@ -30,37 +22,42 @@ import com.google.gson.JsonParser;
 import static model.ErrorCode.*;
 
 public class Connection {
-	static Logger log = LoggerFactory.getLogger(Connection.class);
+	private static Logger log = LoggerFactory.getLogger(Connection.class);
 	
 	private static Connection connectToUrlUsingBasicAuthentication;
 	private static final String USER_AGENT = "Mozilla/5.0";
-	private static String URL_TO_READ;
 	private static final String URL_TO_READ_DBG = "http://localhost:3000";
-	private static final String DISPLAY_SERVER_URL = "http://javach-delanni.c9.io/";
+	private static final String DISPLAY_SERVER_URL = "http://javach-delanni.c9users.io/";
 	private static final String DISPLAY_SERVER_URL_DBG = "http://localhost:3000";
 	private static String TOKEN;
 	private URL url;
 
 	private Socket io;
 
-	private boolean debugMode = false;
+	private boolean isLocal = false;
 
-	private String serverUrl;
+    private String serverUrl;
 	
 	private static Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	public Connection(String server, String token) {
-		URL_TO_READ = server;
-		Connection.TOKEN = token;
-		this.serverUrl = this.debugMode ? URL_TO_READ_DBG : URL_TO_READ;
-
-		if (this.debugMode) {
-			connectSocketIO();
-		}
+		this(server, token, false, false);
 	}
 
+	public Connection(String server, String token, boolean hasDisplay, boolean isLocal){
+        this.isLocal = isLocal;
+
+        Connection.TOKEN = token;
+
+        this.serverUrl = this.isLocal ? URL_TO_READ_DBG : server;
+
+        if (hasDisplay) {
+            connectSocketIO();
+        }
+    }
+
 	private void connectSocketIO() {
-		String displayURL = this.debugMode ? DISPLAY_SERVER_URL_DBG : DISPLAY_SERVER_URL;
+		String displayURL = this.isLocal ? DISPLAY_SERVER_URL_DBG : DISPLAY_SERVER_URL;
 		try {
 			io = IO.socket(displayURL);
 			io.connect();
@@ -82,7 +79,7 @@ public class Connection {
 		}
 	}
 
-	public String sendGet(String Url) {
+	private String sendGet(String Url) {
 		HttpURLConnection conn;
 		try {
 			url = new URL(this.serverUrl + Url);
@@ -98,7 +95,7 @@ public class Connection {
 				log.error("Response Code: {}", responseCode);
 			}
 			
-			StringBuffer response = new StringBuffer();
+			StringBuilder response = new StringBuilder();
 
 			try(BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))){
 				String inputLine;
@@ -117,10 +114,10 @@ public class Connection {
 		}
 	}
 
-	public String sendPost(String Url, String jsonData) {
+	private String sendPost(String Url, String jsonData) {
 		HttpURLConnection conn;
 		try {
-			url = new URL(URL_TO_READ + Url);
+			url = new URL(this.serverUrl + Url);
 			conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("POST");
 			conn.setRequestProperty("User-Agent", USER_AGENT);
@@ -141,7 +138,7 @@ public class Connection {
 			}
 
 
-			StringBuffer response = new StringBuffer();
+			StringBuilder response = new StringBuilder();
 
 			try(BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))){
 				String inputLine;
@@ -191,7 +188,7 @@ public class Connection {
 		if (c == OK) {
 			return gamesListResponse.getGames();
 		} else {
-			return new ArrayList<Integer>();
+			return new ArrayList<>();
 		}
 	}
 
@@ -206,8 +203,7 @@ public class Connection {
 		String jSONObjectAsString = sendPost(Url, null);
 		MessageWithCodeResponse joinResult = GSON.fromJson(jSONObjectAsString, MessageWithCodeResponse.class);
 
-		ErrorCode errorCode = ErrorCode.fromCode(joinResult.code);
-		return errorCode;
+        return ErrorCode.fromCode(joinResult.code);
 	}
 
 	/**
@@ -265,8 +261,7 @@ public class Connection {
 		String jSONObjectAsString = sendPost(Url, requestJson);
 		MessageWithCodeResponse moveResponse = GSON.fromJson(jSONObjectAsString, MessageWithCodeResponse.class);
 
-		ErrorCode errorCode = ErrorCode.fromCode(moveResponse.code);
-		return errorCode;
+        return ErrorCode.fromCode(moveResponse.code);
 	}
 
 	/**
@@ -282,8 +277,7 @@ public class Connection {
 		String jSONObjectAsString = sendPost(Url, requestJson);
 		ShootResponse shootResponse = new Gson().fromJson(jSONObjectAsString, ShootResponse.class);
 
-		ErrorCode errorCode = ErrorCode.fromCode(shootResponse.code);
-		return errorCode;
+        return ErrorCode.fromCode(shootResponse.code);
 	}
 
 	/**
@@ -318,16 +312,14 @@ public class Connection {
 		MessageWithCodeResponse sonarActivationResult = GSON.fromJson(jSONObjectAsString,
 				MessageWithCodeResponse.class);
 
-		ErrorCode errorCode = ErrorCode.fromCode(sonarActivationResult.code);
-		return errorCode;
+        return ErrorCode.fromCode(sonarActivationResult.code);
 	}
 
 	private String prettify(String uglyJSONString) {
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		JsonParser jp = new JsonParser();
 		JsonElement je = jp.parse(uglyJSONString);
-		String prettyJsonString = gson.toJson(je);
-		return prettyJsonString;
+        return gson.toJson(je);
 	}
 
 	// public static Connection instance(String server, String username, String

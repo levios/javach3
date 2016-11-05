@@ -16,3 +16,6 @@ logs/log.out
 .settings
 .classpath
 .project
+
+*.iml
+.idea/
