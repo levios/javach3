@@ -78,7 +78,7 @@ class PaintPanel extends JPanel {
 			// Draw ships
 			session.myShips.forEach(ship -> {
 				drawImage.translate(ship.position.x, y - ship.position.y);
-				drawImage.rotate(Math.toRadians(ship.rotation));
+				drawImage.rotate(Math.toRadians(90 - ship.rotation));
 
 				drawImage.setColor(SONAR_SEAWEED);
 				drawImage.fillOval(
@@ -95,7 +95,7 @@ class PaintPanel extends JPanel {
 						(int) (ship.r * 2));
 				drawImage.setColor(GRASS_GREEN);
 				drawImage.fillPolygon(makeTriangleX(ship.r), makeTriangleY(ship.r), 3);
-				drawImage.rotate(Math.toRadians(-ship.rotation));
+				drawImage.rotate(Math.toRadians(-(90 - ship.rotation)));
 				drawImage.translate(-ship.position.x, -(y - ship.position.y));
 			});
 
@@ -106,7 +106,7 @@ class PaintPanel extends JPanel {
 
 	private int[] makeTriangleY(double r) {
 		return new int[]{
-				0, 0, (int) r
+				0, 0, (int) -r
 		};
 	}
 
