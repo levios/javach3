@@ -192,6 +192,7 @@ public class GameSession {
 			return readings;
 		}).collect(Collectors.toList());
 
+
 		this.myShips.forEach(s -> {
 			this.connection.move(this.gameId, s.id, this.mapConfiguration.maxAccelerationPerRound, this.mapConfiguration.maxSteeringPerRound);
 		});

@@ -46,7 +46,7 @@ class PaintPanel extends JPanel {
 		g.setFont(new Font("TimesRoman", Font.PLAIN, 14));
 
 		drawImage.setColor(OCEAN_BLUE);
-		drawImage.fillRect(0, 0, session.map.width, session.map.height);
+		drawImage.fillRect(0, 0, x, y);
 
 		// Segedvonalak
 		for (int i = 0; i <= x; i += 100) {

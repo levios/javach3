@@ -41,6 +41,7 @@ public class Connection {
 
 	private String serverUrl;
 
+	//private static Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static Gson GSON = new GsonBuilder().create();
 
 	public Connection(String server) {
@@ -134,10 +135,16 @@ public class Connection {
 			// Send post request
 			jsonData = jsonData == null ? "" : jsonData;
 			log.info("{} POST to [{}]. INPUT: {}", topic, Url, prettify(jsonData));
+
+
+
+
+
 			OutputStream os = conn.getOutputStream();
 			os.write(jsonData.getBytes());
 			os.close();
 			os.flush();
+
 
 			int responseCode = conn.getResponseCode();
 			if (responseCode != 200) {
@@ -271,7 +278,7 @@ public class Connection {
 		request.speed = speedDiff;
 		request.turn = rotationDiff;
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/move";
-		String requestJson = GSON.toJson(request);
+
 		String jSONObjectAsString = sendPost("move", Url, requestJson);
 		MessageWithCodeResponse moveResponse = GSON.fromJson(jSONObjectAsString, MessageWithCodeResponse.class);
 
