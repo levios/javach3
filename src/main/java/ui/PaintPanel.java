@@ -175,6 +175,7 @@ class PaintPanel extends JPanel {
 
 	public void refresh(GameSession session) {
 		PaintPanel.session = session;
-		repaint();
+//		repaint();
+		this.invalidate();
 	}
 }
