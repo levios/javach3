@@ -1,6 +1,7 @@
 package main;
 
 import game.GameSession;
+import game.GameThread;
 import game.LeviGameThread;
 
 import java.awt.EventQueue;
@@ -14,14 +15,14 @@ public class Main {
 	static Logger log = LoggerFactory.getLogger(Main.class);
 	public static MainPaint GUI;
 	
-	public static boolean gui = true;
+	public static boolean hasGui = true;
 
 	public static void main(String[] args) {
 		try {
 			
 			String server = args[0];
 			
-			Thread game = new LeviGameThread(false, gui, server);
+			Thread game = new GameThread(false, hasGui, server);
 			game.run();	
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -29,7 +30,7 @@ public class Main {
 	}
 	
 	public static MainPaint startUI(int x, int y){
-		if(gui) {
+		if(hasGui) {
 	        EventQueue.invokeLater(new Runnable() {
 	            
 	            @Override
