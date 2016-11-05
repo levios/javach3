@@ -22,7 +22,7 @@ public class Entity {
 	public Owner owner;
 	@SerializedName("velocity")
 	@Expose
-	public Integer velocity;
+	public Double velocity;
 	@SerializedName("angle")
 	@Expose
 	public Double angle;

@@ -26,6 +26,9 @@ public class Main {
 		        });
 			}
 			
+			//wait for UI to get initialized
+			Thread.sleep(1000);
+			
 			String server = args[0];
 			
 			Thread game = new GameThread(false, gui, GUI, server);

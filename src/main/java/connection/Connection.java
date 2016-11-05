@@ -236,7 +236,6 @@ public class Connection {
 	public List<Submarine> submarine(Long gameId) {
 		String Url = "game/" + gameId + "/submarine";
 		String jSONObjectAsString = sendGet("submarine", Url);
-		log.info(prettify(jSONObjectAsString));
 		SubmarineResponse submarines = GSON.fromJson(jSONObjectAsString, SubmarineResponse.class);
 
 		ErrorCode errorCode = ErrorCode.fromCode(submarines.code);
@@ -287,8 +286,8 @@ public class Connection {
 	/**
 	 * GET
 	 * http://server-adress:port/jc16-srv/game/{gameId}/submarine/{submarineId}/sonar
-	 * 3 - Nem létezõ gameId
-	 * 4 - Nincs a csapatnak jogosultsága a megadott tengeralattjárót kezelni
+	 * 3 - Nem letezo gameId
+	 * 4 - Nincs a csapatnak jogosultsaga a megadott tengeralattjot kezelni
 	 */
 	public List<Entity> sonar(Long gameId, Long submarineId) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/sonar";

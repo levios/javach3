@@ -106,8 +106,6 @@ public class GameSession {
 	void refreshUI(){
 		if(gui)
 			GUI.refresh(this);
-		else 
-			log.warn("Tried to refresh UI but [boolean gui] is set to false");
 	}
 
 	private List<Submarine> createShips(MapConfiguration mapConfiguration) {
@@ -162,6 +160,7 @@ public class GameSession {
 				throw new Exception("Join failed for some reason. Message was " + joinResult.tagline);
 			} else {
 				this.state = GameState.JOINED;
+				log.info("game {} joined", id);
 			}
 		}
 	}
