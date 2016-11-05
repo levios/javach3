@@ -4,33 +4,44 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
-import connection.Connection;
-import model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import ui.MainPaint;
+//import utils.Transformer;
+import connection.Connection;
+import main.Main;
+import model.*;
 import static model.ErrorCode.*;
 
 public class GameSession {
-
-	private Integer gameId;
+	static Logger log = LoggerFactory.getLogger(GameSession.class);
+	private Long gameId;
 	private Connection connection;
 	private GameState state = GameState.UNINITIALIZED;
-	private Game gameInfo;
+	public Game gameInfo;
 	private MapConfiguration mapConfiguration;
 	private ConnectionStatus connectionStatus;
 	private Integer myScore;
 	private Integer round;
-	private GameMap map;
-	private List<Submarine> myShips;
-	private Map<Integer, Submarine> myShipMap;
+	public GameMap map;
+	public List<Submarine> myShips;
+	private Map<Long, Submarine> myShipMap;
+	private final boolean gui;
+	private MainPaint GUI = null;
+	public int submarineSize;
 
-	public GameSession(Connection connection) {
+	public GameSession(Connection connection, boolean gui) {
 		this.connection = connection;
 		this.myShipMap = new HashMap<>();
+		this.gui = gui;
 	}
 
-	public void start(Integer id) throws Exception {
+	public void start(Long id) throws Exception {
 		this.gameId = id;
 		this.state = GameState.LOBBY_WAIT;
 		this.joinGame(this.gameId);
@@ -71,17 +82,39 @@ public class GameSession {
 		this.round = gameInfo.round;
 		this.myScore = gameInfo.scores.scores.myScore;
 		this.mapConfiguration = gameInfo.mapConfiguration;
+		
+		if(GUI == null){
+			GUI = startUI(mapConfiguration.width, mapConfiguration.height);
+		}
 
 		Submarine.setBounds(this.mapConfiguration);
 		Torpedo.setBounds(this.mapConfiguration);
 
 		if (full) {
+			// Submarines 
+			this.submarineSize = gameInfo.mapConfiguration.submarineSize;
 			this.map = new GameMap(gameInfo.mapConfiguration);
 			this.myShips = this.createShips(gameInfo.mapConfiguration);
 		}
 
 		this.connectionStatus = gameInfo.connectionStatus;
 		this.evaluateStatus(gameInfo.status);
+		
+		// If gui is enabled we refresh the UI
+		refreshUI();
+	}
+	
+	MainPaint startUI(int x, int y){
+		if(gui) {
+			return  Main.startUI(x, y);
+		}
+		return null;
+	}
+	
+	void refreshUI(){
+		if(gui)  {
+			GUI.refresh(this);
+		}
 	}
 
 	private List<Submarine> createShips(MapConfiguration mapConfiguration) {
@@ -127,7 +160,7 @@ public class GameSession {
 
 	}
 
-	private void joinGame(Integer id) throws Exception {
+	private void joinGame(Long id) throws Exception {
 		List<Integer> gameList = this.connection.gameList();
 		if (gameList.stream().anyMatch(o -> Objects.equals(o, id))) {
 			ErrorCode joinResult = this.connection.joinGame(id);
@@ -136,6 +169,7 @@ public class GameSession {
 				throw new Exception("Join failed for some reason. Message was " + joinResult.tagline);
 			} else {
 				this.state = GameState.JOINED;
+				log.info("game {} joined", id);
 			}
 		}
 	}

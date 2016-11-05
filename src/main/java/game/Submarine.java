@@ -34,15 +34,15 @@ public class Submarine extends ProjectileLike {
 	}
 
 	public String type;
-	public Integer id;
+	public Long id;
 	public String owner;
 
-	public Integer hp;
-	public Integer sonarCooldown = 0;
-	public Integer sonarDuration = 0;
-	public Integer torpedoCooldown = 0;
+	public Double hp;
+	public Double sonarCooldown = 0.0;
+	public Double sonarDuration = 0.0;
+	public Double torpedoCooldown = 0.0;
 
-	public Submarine(int id, String owner, double x, double y, double speed, double rotation) {
+	public Submarine(long id, String owner, double x, double y, double speed, double rotation) {
 		super(x, y, SUBMARINE_RADIUS, speed, rotation);
 		this.id = id;
 		this.owner = owner;

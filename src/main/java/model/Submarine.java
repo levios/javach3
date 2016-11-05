@@ -13,7 +13,7 @@ public class Submarine {
 	public String type;
 	@SerializedName("id")
 	@Expose
-	public Integer id;
+	public Long id;
 	@SerializedName("position")
 	@Expose
 	public Position position;
@@ -22,22 +22,22 @@ public class Submarine {
 	public Owner owner;
 	@SerializedName("velocity")
 	@Expose
-	public Integer velocity;
+	public Double velocity;
 	@SerializedName("angle")
 	@Expose
-	public Integer angle;
+	public Double angle;
 	@SerializedName("hp")
 	@Expose
-	public Integer hp;
+	public Double hp;
 	@SerializedName("sonarCooldown")
 	@Expose
-	public Integer sonarCooldown;
+	public Double sonarCooldown;
 	@SerializedName("torpedoCooldown")
 	@Expose
-	public Integer torpedoCooldown;
+	public Double torpedoCooldown;
 	@SerializedName("sonarExtended")
 	@Expose
-	public Integer sonarExtended;
+	public Double sonarExtended;
 
 	@Override
 	public String toString() {
