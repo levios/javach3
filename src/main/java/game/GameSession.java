@@ -1,5 +1,8 @@
 package game;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,11 +19,10 @@ import ui.MainPaint;
 import connection.Connection;
 import main.Main;
 import model.*;
-
 import static model.ErrorCode.*;
 
 public class GameSession {
-	static Logger log = LoggerFactory.getLogger(GameSession.class);
+	private static Logger log = LoggerFactory.getLogger(GameSession.class);
 
 	private Long gameId;
 	private Connection connection;
@@ -34,6 +36,7 @@ public class GameSession {
 	public GameMap map;
 	public List<Submarine> myShips;
 	private Map<Long, Submarine> myShipMap;
+	private Map<Long, Integer> torpedosShotInRounds = new HashMap<>();
 
 	private final boolean gui;
 	private MainPaint GUI = null;
@@ -186,16 +189,35 @@ public class GameSession {
 
 	public void executeStrategy() {
 		List<Object> sonarReadings = this.myShips.stream().map(s -> {
-			List<Entity> sonar = this.connection.sonar(this.gameId, s.id);
-			SonarReadings readings = new SonarReadings(sonar, s.position, this.mapConfiguration.sonarRange);
+			List<Entity> entities = this.connection.sonar(this.gameId, s.id);
+			SonarReadings readings = new SonarReadings(entities, s.position, this.mapConfiguration.sonarRange);
 			this.map.applyReadings(readings);
 			return readings;
 		}).collect(Collectors.toList());
 
-
 		this.myShips.forEach(s -> {
 			this.connection.move(this.gameId, s.id, this.mapConfiguration.maxAccelerationPerRound, this.mapConfiguration.maxSteeringPerRound);
 		});
+		
+		// shoot
+		Submarine first = this.myShips.get(0);
+		if(canShootTorpedo(first.id)){
+			//shoot with first
+			this.connection.shoot(this.gameId, first.id, 0.0);
+			torpedosShotInRounds.put(first.id, round);
+		}
+		Submarine second = this.myShips.get(1);
+		if(canShootTorpedo(second.id)){
+			//shoot with second
+			this.connection.shoot(this.gameId, second.id, 0.0);
+			torpedosShotInRounds.put(second.id, round);
+		}
 
+	}
+
+	private boolean canShootTorpedo(Long submarineId) {
+		if(torpedosShotInRounds.get(submarineId) == null) return true;
+		if(this.round - torpedosShotInRounds.get(submarineId) >= this.mapConfiguration.torpedoCooldown) return true;
+		return false;
 	}
 }

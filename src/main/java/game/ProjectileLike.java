@@ -22,4 +22,11 @@ public class ProjectileLike extends Circular {
 	public void steer(double deltaRot){
 		this.rotation += deltaRot;
 	}
+	
+	public void updatePosition(double x, double y, double angle, double speed) {
+		this.rotation = angle;
+		this.speed = speed;
+		this.position.x = x;
+		this.position.y = y;
+	}
 }
