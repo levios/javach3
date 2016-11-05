@@ -105,8 +105,9 @@ public class Connection {
 			}
 
 			String jSONObjectAsString = response.toString();
-			io.emit(topic, jSONObjectAsString);
 
+//			io.emit(topic, jSONObjectAsString);
+			
 			log.info("Get RESPONSE: {}", prettify(jSONObjectAsString));
 			return jSONObjectAsString;
 
@@ -150,8 +151,8 @@ public class Connection {
 			}
 
 			String jSONObjectAsString = response.toString();
-
-			io.emit(topic, jSONObjectAsString);
+			
+//			io.emit(topic, jSONObjectAsString);
 
 			log.info("Post RESPONSE: {}", prettify(jSONObjectAsString));
 			return jSONObjectAsString;
@@ -213,7 +214,7 @@ public class Connection {
 
 	/**
 	 * GET http://server-adress:port/jc16-srv/game/{gameId}
-	 * 3 - Nem létezõ gameId
+	 * 3 - Nem letezo gameId
 	 */
 	public Game gameInfo(Integer gameId) {
 		String Url = "game/" + gameId;
@@ -232,7 +233,7 @@ public class Connection {
 
 	/**
 	 * GET http://server-adress:port/jc16-srv/game/{gameId}/submarine
-	 * 3 - Nem létezõ gameId
+	 * 3 - Nem letezo gameId
 	 */
 	public List<Submarine> submarine(Integer gameId) {
 		String Url = "game/" + gameId + "/submarine";

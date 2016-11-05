@@ -6,6 +6,7 @@ import java.util.Calendar;
 
 import org.apache.log4j.Logger;
 
+import ui.MainPaint;
 import connection.Connection;
 
 public class GameThread extends Thread {
@@ -18,19 +19,25 @@ public class GameThread extends Thread {
 	public static int POINTS = 0;
 	private long startTime;
 	private long cycleStartTime;
+	MainPaint GUI;
 
 	private SimpleDateFormat sdf = new SimpleDateFormat("yyyy MMM dd - HH:mm:ss");
 
-	private boolean isDebug;
-
 	private static final long TEST_LENGTH_IN_NANOSEC = 60 * 60 * 1000 * 1000000L;
 	private static final long TIME_TO_PRECALC = (TEST_LENGTH_IN_NANOSEC / 1000000) / 2;
+
+	private final boolean isDebug;
+	private final boolean gui;
+
 	private static final boolean INSTA_EXPRESS_ACTIONS = true;
 	public static final Integer[] VELOCITY = (Integer[]) Arrays.asList(170, 150, 130, 110).toArray();
 
-	public GameThread(boolean isDebug, String server, String token) {
-		conn = new Connection(server, token);
+
+	public GameThread(boolean isDebug, boolean gui, MainPaint GUI, String server) {
+		conn = new Connection(server);
 		this.isDebug = isDebug;
+		this.gui = gui;
+		this.GUI = GUI;
 
 		log.info("**********************************************");
 		log.info("**********************************************");
@@ -72,6 +79,10 @@ public class GameThread extends Thread {
 
 		GameSession game = new GameSession(conn);
 
+
+		
+		GameSession game = new GameSession(conn, gui, GUI);
+		
 		game.start();
 
 		log.debug(game.getStatusInfo());

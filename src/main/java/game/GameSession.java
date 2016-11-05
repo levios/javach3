@@ -4,15 +4,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ui.MainPaint;
+//import utils.Transformer;
 import connection.Connection;
 import model.*;
 
 import static model.ErrorCode.*;
 
 public class GameSession {
-
+	static Logger log = LoggerFactory.getLogger(GameSession.class);
 	private Integer gameId;
 	private Connection connection;
 	private GameState state = GameState.UNINITIALIZED;
@@ -21,13 +28,18 @@ public class GameSession {
 	private ConnectionStatus connectionStatus;
 	private Integer myScore;
 	private Integer round;
-	private GameMap map;
+	public GameMap map;
 	private List<Submarine> myShips;
 	private Map<Integer, Submarine> myShipMap;
+	private final boolean gui;
+	private final MainPaint GUI;
+	public int submarineSize;
 
-	public GameSession(Connection connection) {
+	public GameSession(Connection connection, boolean gui,  MainPaint GUI) {
 		this.connection = connection;
 		this.myShipMap = new HashMap<>();
+		this.gui = gui;
+		this.GUI = GUI;
 	}
 
 	public void start(Integer id) throws Exception {
@@ -82,6 +94,25 @@ public class GameSession {
 
 		this.connectionStatus = gameInfo.connectionStatus;
 		this.evaluateStatus(gameInfo.status);
+		
+		// Submarines 
+		this.submarineSize = gameInfo.mapConfiguration.submarineSize;
+		List<model.Submarine> submarines = this.connection.submarine(this.gameId);
+		
+		this.map.ships.clear();
+		this.map.ships.addAll(submarines);
+		
+		// If gui is enabled we refresh the UI
+		refreshUI();
+	}
+	
+	
+	
+	void refreshUI(){
+		if(gui)
+			GUI.refresh(this);
+		else 
+			log.warn("Tried to refresh UI but [boolean gui] is set to false");
 	}
 
 	private List<Submarine> createShips(MapConfiguration mapConfiguration) {
