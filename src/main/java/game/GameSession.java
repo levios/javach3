@@ -29,7 +29,7 @@ public class GameSession {
 	private Integer myScore;
 	private Integer round;
 	public GameMap map;
-	private List<Submarine> myShips;
+	public List<Submarine> myShips;
 	private Map<Long, Submarine> myShipMap;
 	private final boolean gui;
 	private final MainPaint GUI;

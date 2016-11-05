@@ -13,8 +13,6 @@ public class GameMap {
 	public List<Circular> islands;
 	public List<Submarine> ships;
 	private Map<Integer, Submarine> shipMap;
-//	public List<Circular> islands;
-//	public List<model.Submarine> ships;
 	private List<ProjectileLike> torpedos;
 
 	public GameMap(MapConfiguration mapConfiguration) {

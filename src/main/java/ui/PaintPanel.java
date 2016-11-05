@@ -33,19 +33,20 @@ class PaintPanel extends JPanel {
 		g.setFont(new Font("TimesRoman", Font.PLAIN, 14));
 
 		if (session != null) {
+			// Draw islands
 			drawImage.setColor(Color.RED);
-			for (Circular island : session.map.islands) {
-				drawImage.fillOval((int) (island.x() - island.r()),
-						(int) (island.y() - island.r()),
-						(int) (island.r() * 2), (int) (island.r() * 2));
-			}
+			session.map.islands.forEach(island -> drawImage.fillOval(
+					(int) (island.x() - island.r()),
+					(int) (island.y() - island.r()), (int) (island.r() * 2),
+					(int) (island.r() * 2)));
 
+			// Draw ships
 			drawImage.setColor(Color.BLUE);
-			for (Submarine ship : session.map.ships) {
-				drawImage.fillOval((int) (ship.position.x - session.submarineSize),
-						(int) (ship.position.y - session.submarineSize), (int) (session.submarineSize * 2),
-						(int) (session.submarineSize * 2));
-			}
+			session.myShips.forEach(ship -> drawImage.fillOval(
+					(int) (ship.position.x - session.submarineSize),
+					(int) (ship.position.y - session.submarineSize),
+					(int) (session.submarineSize * 2),
+					(int) (session.submarineSize * 2)));
 		}
 	}
 
