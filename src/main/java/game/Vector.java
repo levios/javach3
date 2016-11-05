@@ -44,8 +44,13 @@ public class Vector {
 		return new Vector(newX, newY);
 	}
 
+	public double distanceFrom(Vector other){
+		return this.add(other.negate()).getMagnitude();
+	}
+
 	public static Vector unit(double rotation) {
 		double radRotation = Math.toRadians(rotation);
 		return new Vector(Math.cos(radRotation), Math.sin(radRotation));
 	}
+
 }
