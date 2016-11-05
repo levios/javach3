@@ -20,7 +20,7 @@ import static model.ErrorCode.*;
 
 public class GameSession {
 	static Logger log = LoggerFactory.getLogger(GameSession.class);
-	private Integer gameId;
+	private Long gameId;
 	private Connection connection;
 	private GameState state = GameState.UNINITIALIZED;
 	private Game gameInfo;
@@ -30,7 +30,7 @@ public class GameSession {
 	private Integer round;
 	public GameMap map;
 	private List<Submarine> myShips;
-	private Map<Integer, Submarine> myShipMap;
+	private Map<Long, Submarine> myShipMap;
 	private final boolean gui;
 	private final MainPaint GUI;
 	public int submarineSize;
@@ -42,7 +42,7 @@ public class GameSession {
 		this.GUI = GUI;
 	}
 
-	public void start(Integer id) throws Exception {
+	public void start(Long id) throws Exception {
 		this.gameId = id;
 		this.state = GameState.LOBBY_WAIT;
 		this.joinGame(this.gameId);
@@ -88,19 +88,14 @@ public class GameSession {
 		Torpedo.setBounds(this.mapConfiguration);
 
 		if (full) {
+			// Submarines 
+			this.submarineSize = gameInfo.mapConfiguration.submarineSize;
 			this.map = new GameMap(gameInfo.mapConfiguration);
 			this.myShips = this.createShips(gameInfo.mapConfiguration);
 		}
 
 		this.connectionStatus = gameInfo.connectionStatus;
 		this.evaluateStatus(gameInfo.status);
-		
-		// Submarines 
-		this.submarineSize = gameInfo.mapConfiguration.submarineSize;
-		List<model.Submarine> submarines = this.connection.submarine(this.gameId);
-		
-		this.map.ships.clear();
-		this.map.ships.addAll(submarines);
 		
 		// If gui is enabled we refresh the UI
 		refreshUI();
@@ -158,7 +153,7 @@ public class GameSession {
 
 	}
 
-	private void joinGame(Integer id) throws Exception {
+	private void joinGame(Long id) throws Exception {
 		List<Integer> gameList = this.connection.gameList();
 		if (gameList.stream().anyMatch(o -> Objects.equals(o, id))) {
 			ErrorCode joinResult = this.connection.joinGame(id);

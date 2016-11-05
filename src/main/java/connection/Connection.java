@@ -40,14 +40,12 @@ public class Connection {
 
 	private static Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-	public Connection(String server, String token) {
-		this(server, token, false, false);
+	public Connection(String server) {
+		this(server, false, false);
 	}
 
-	public Connection(String server, String token, boolean hasDisplay, boolean isLocal){
+	public Connection(String server, boolean hasDisplay, boolean isLocal){
         this.isLocal = isLocal;
-
-        Connection.TOKEN = token;
 
         this.serverUrl = this.isLocal ? URL_TO_READ_DBG : server;
 
@@ -88,7 +86,7 @@ public class Connection {
 			conn.setRequestProperty("User-Agent", USER_AGENT);
 			conn.setRequestProperty("TEAMTOKEN", TOKEN);
 
-			log.info("Get to url [{}]", Url);
+			log.info("{} GET to [{}]", topic, Url);
 
 			int responseCode = conn.getResponseCode();
 			if (responseCode != 200) {
@@ -128,7 +126,7 @@ public class Connection {
 
 			// Send post request
 			jsonData = jsonData == null ? "" : jsonData;
-			log.info("Post to url {}. INPUT {}", Url, prettify(jsonData));
+			log.info("{} POST to [{}]. INPUT: {}", topic, Url, prettify(jsonData));
 			conn.setDoOutput(true);
 			DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
 			wr.writeBytes(jsonData);
@@ -167,7 +165,7 @@ public class Connection {
 	 * POST
 	 * http://server-adress:port/jc16-srv/game
 	 */
-	public Integer createGame() {
+	public Long createGame() {
 		String Url = "game";
 		String jSONObjectAsString = sendPost("createGame", Url, null);
 		CreateGameResponse gameModel = GSON.fromJson(jSONObjectAsString, CreateGameResponse.class);
@@ -204,7 +202,7 @@ public class Connection {
 	 * 2 - Folyamatban lévõ játék
 	 * 3 - Nem létezõ gameId
 	 */
-	public ErrorCode joinGame(Integer gameId) {
+	public ErrorCode joinGame(Long gameId) {
 		String Url = "game/" + gameId;
 		String jSONObjectAsString = sendPost("joinGame", Url, null);
 		MessageWithCodeResponse joinResult = GSON.fromJson(jSONObjectAsString, MessageWithCodeResponse.class);
@@ -216,7 +214,7 @@ public class Connection {
 	 * GET http://server-adress:port/jc16-srv/game/{gameId}
 	 * 3 - Nem letezo gameId
 	 */
-	public Game gameInfo(Integer gameId) {
+	public Game gameInfo(Long gameId) {
 		String Url = "game/" + gameId;
 		String jSONObjectAsString = sendGet("gameInfo", Url);
 		GameInfoResponse gameModel = GSON.fromJson(jSONObjectAsString, GameInfoResponse.class);
@@ -235,7 +233,7 @@ public class Connection {
 	 * GET http://server-adress:port/jc16-srv/game/{gameId}/submarine
 	 * 3 - Nem letezo gameId
 	 */
-	public List<Submarine> submarine(Integer gameId) {
+	public List<Submarine> submarine(Long gameId) {
 		String Url = "game/" + gameId + "/submarine";
 		String jSONObjectAsString = sendGet("submarine", Url);
 		log.info(prettify(jSONObjectAsString));
@@ -261,7 +259,7 @@ public class Connection {
 	 * 11 - Túl nagy gyorsulás
 	 * 12 - Túl nagy kanyarodás
 	 */
-	public ErrorCode move(Integer gameId, Integer submarineId, MoveRequest request) {
+	public ErrorCode move(Long gameId, Long submarineId, MoveRequest request) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/move";
 		String requestJson = GSON.toJson(request);
 		String jSONObjectAsString = sendPost("move", Url, requestJson);
@@ -292,7 +290,7 @@ public class Connection {
 	 * 3 - Nem létezõ gameId
 	 * 4 - Nincs a csapatnak jogosultsága a megadott tengeralattjárót kezelni
 	 */
-	public List<Entity> sonar(Integer gameId, Integer submarineId) {
+	public List<Entity> sonar(Long gameId, Long submarineId) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/sonar";
 		String jSONObjectAsString = sendGet("sonar", Url);
 		SonarResponse sonarResponse = GSON.fromJson(jSONObjectAsString, SonarResponse.class);

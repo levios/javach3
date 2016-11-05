@@ -10,8 +10,8 @@ public class GameMap {
 	private MapConfiguration rules;
 	private Integer height;
 	private Integer width;
-	private List<Circular> islands;
-	private List<Submarine> ships;
+	public List<Circular> islands;
+	public List<Submarine> ships;
 	private Map<Integer, Submarine> shipMap;
 //	public List<Circular> islands;
 //	public List<model.Submarine> ships;

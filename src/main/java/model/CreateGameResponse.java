@@ -14,7 +14,7 @@ public class CreateGameResponse {
 	private Integer code;
 	@SerializedName("id")
 	@Expose
-	private Integer id;
+	private Long id;
 
 	/**
 	 * 
@@ -54,7 +54,7 @@ public class CreateGameResponse {
 	 * 
 	 * @return The id
 	 */
-	public Integer getId() {
+	public Long getId() {
 		return id;
 	}
 
@@ -63,7 +63,7 @@ public class CreateGameResponse {
 	 * @param id
 	 *            The id
 	 */
-	public void setId(Integer id) {
+	public void setId(Long id) {
 		this.id = id;
 	}
 	

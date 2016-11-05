@@ -76,10 +76,6 @@ public class GameThread extends Thread {
 
 	private void doActuallyRun() throws Exception {
 		startTime = System.nanoTime();
-
-		GameSession game = new GameSession(conn);
-
-
 		
 		GameSession game = new GameSession(conn, gui, GUI);
 		

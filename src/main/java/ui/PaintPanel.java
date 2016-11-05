@@ -2,6 +2,7 @@ package ui;
 
 import game.Circular;
 import game.GameSession;
+import game.Submarine;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -40,7 +41,7 @@ class PaintPanel extends JPanel {
 			}
 
 			drawImage.setColor(Color.BLUE);
-			for (model.Submarine ship : session.map.ships) {
+			for (Submarine ship : session.map.ships) {
 				drawImage.fillOval((int) (ship.position.x - session.submarineSize),
 						(int) (ship.position.y - session.submarineSize), (int) (session.submarineSize * 2),
 						(int) (session.submarineSize * 2));
