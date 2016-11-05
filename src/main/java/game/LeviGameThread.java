@@ -19,7 +19,6 @@ public class LeviGameThread extends Thread {
 	public static int POINTS = 0;
 	private long startTime;
 	private long cycleStartTime;
-	MainPaint GUI;
 
 	private SimpleDateFormat sdf = new SimpleDateFormat("yyyy MMM dd - HH:mm:ss");
 
@@ -33,11 +32,10 @@ public class LeviGameThread extends Thread {
 	public static final Integer[] VELOCITY = (Integer[]) Arrays.asList(170, 150, 130, 110).toArray();
 
 
-	public LeviGameThread(boolean isDebug, boolean gui, MainPaint GUI, String server) {
+	public LeviGameThread(boolean isDebug, boolean gui, String server) {
 		conn = new Connection(server);
 		this.isDebug = isDebug;
 		this.gui = gui;
-		this.GUI = GUI;
 
 		log.info("**********************************************");
 		log.info("**********************************************");
@@ -77,7 +75,7 @@ public class LeviGameThread extends Thread {
 	private void doActuallyRun() throws Exception {
 		startTime = System.nanoTime();
 		
-		GameSession game = new GameSession(conn, gui, GUI);
+		GameSession game = new GameSession(conn, gui);
 		
 		game.start();
 

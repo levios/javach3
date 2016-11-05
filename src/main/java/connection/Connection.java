@@ -255,8 +255,8 @@ public class Connection {
 	 * 4 - Nincs a csapatnak jogosultsága a megadott tengeralattjárót kezelni
 	 * 9 - A játék nincs folyamatban
 	 * 10 - A megadott hajó már mozgott ebben a körben
-	 * 11 - Túl nagy gyorsulás
-	 * 12 - Túl nagy kanyarodás
+	 * 11 - Tul nagy gyorsulas
+	 * 12 - Tul nagy kanyarodas
 	 */
 	public ErrorCode move(Long gameId, Long submarineId, MoveRequest request) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/move";
@@ -305,9 +305,9 @@ public class Connection {
 	/**
 	 * POST
 	 * http://server-adress:port/jc16-srv/game/{gameId}/submarine/{submarineId}/sonar
-	 * 3 - Nem létezõ gameId
+	 * 3 - Nem letezo gameId
 	 * 4 - Nincs a csapatnak jogosultsága a megadott tengeralattjárót kezelni
-	 * 8 - Újratöltõdés elõtti hívás
+	 * 8 - Ujratoltodes elotti hivas
 	 */
 	public ErrorCode extendSonar(Integer gameId, Integer submarineId) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/sonar";

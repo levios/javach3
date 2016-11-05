@@ -14,8 +14,8 @@ import org.slf4j.LoggerFactory;
 import ui.MainPaint;
 //import utils.Transformer;
 import connection.Connection;
+import main.Main;
 import model.*;
-
 import static model.ErrorCode.*;
 
 public class GameSession {
@@ -23,7 +23,7 @@ public class GameSession {
 	private Long gameId;
 	private Connection connection;
 	private GameState state = GameState.UNINITIALIZED;
-	private Game gameInfo;
+	public Game gameInfo;
 	private MapConfiguration mapConfiguration;
 	private ConnectionStatus connectionStatus;
 	private Integer myScore;
@@ -32,14 +32,13 @@ public class GameSession {
 	public List<Submarine> myShips;
 	private Map<Long, Submarine> myShipMap;
 	private final boolean gui;
-	private final MainPaint GUI;
+	private MainPaint GUI = null;
 	public int submarineSize;
 
-	public GameSession(Connection connection, boolean gui,  MainPaint GUI) {
+	public GameSession(Connection connection, boolean gui) {
 		this.connection = connection;
 		this.myShipMap = new HashMap<>();
 		this.gui = gui;
-		this.GUI = GUI;
 	}
 
 	public void start(Long id) throws Exception {
@@ -83,6 +82,10 @@ public class GameSession {
 		this.round = gameInfo.round;
 		this.myScore = gameInfo.scores.scores.myScore;
 		this.mapConfiguration = gameInfo.mapConfiguration;
+		
+		if(GUI == null){
+			GUI = startUI(mapConfiguration.width, mapConfiguration.height);
+		}
 
 		Submarine.setBounds(this.mapConfiguration);
 		Torpedo.setBounds(this.mapConfiguration);
@@ -101,11 +104,17 @@ public class GameSession {
 		refreshUI();
 	}
 	
-	
+	MainPaint startUI(int x, int y){
+		if(gui) {
+			return  Main.startUI(x, y);
+		}
+		return null;
+	}
 	
 	void refreshUI(){
-		if(gui)
+		if(gui)  {
 			GUI.refresh(this);
+		}
 	}
 
 	private List<Submarine> createShips(MapConfiguration mapConfiguration) {

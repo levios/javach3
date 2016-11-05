@@ -18,7 +18,13 @@ class PaintPanel extends JPanel {
 
 	private static volatile GameSession session = null;
 
-	public PaintPanel() {
+	private final int x;
+	private final int y;
+	private final int fontPixelHeight = 20;
+	
+	public PaintPanel(int x, int y) {
+		this.x = x;
+		this.y = y;
 		setBackground(Color.ORANGE);
 		this.setFocusable(true);
 		this.grabFocus();
@@ -29,7 +35,7 @@ class PaintPanel extends JPanel {
 		super.paintComponent(g);
 		Graphics2D drawImage = (Graphics2D) g;
 
-		g.translate(10, 10);
+//		g.translate(10, 10);
 		g.setFont(new Font("TimesRoman", Font.PLAIN, 14));
 
 		if (session != null) {
@@ -37,16 +43,22 @@ class PaintPanel extends JPanel {
 			drawImage.setColor(Color.RED);
 			session.map.islands.forEach(island -> drawImage.fillOval(
 					(int) (island.x() - island.r()),
-					(int) (island.y() - island.r()), (int) (island.r() * 2),
+					(int)(y - island.y() - island.r()), 
+					(int) (island.r() * 2),
 					(int) (island.r() * 2)));
 
 			// Draw ships
 			drawImage.setColor(Color.BLUE);
 			session.myShips.forEach(ship -> drawImage.fillOval(
 					(int) (ship.position.x - session.submarineSize),
-					(int) (ship.position.y - session.submarineSize),
+					(int)(y - ship.position.y - session.submarineSize),
 					(int) (session.submarineSize * 2),
 					(int) (session.submarineSize * 2)));
+			
+			// Draw Statistics
+			drawImage.setColor(Color.BLACK);
+			drawImage.drawString("round: " + session.gameInfo.round, x - 150, (fontPixelHeight * 1));
+			drawImage.drawString("myScore: " + session.gameInfo.scores.scores.myScore, x - 150, (fontPixelHeight * 2));
 		}
 	}
 

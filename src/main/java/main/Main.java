@@ -1,13 +1,17 @@
 package main;
 
+import game.GameSession;
+import game.LeviGameThread;
+
 import java.awt.EventQueue;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ui.MainPaint;
-import game.GameThread;
-import connection.*;
 
 public class Main {
-	
+	static Logger log = LoggerFactory.getLogger(Main.class);
 	public static MainPaint GUI;
 	
 	public static boolean gui = true;
@@ -15,26 +19,33 @@ public class Main {
 	public static void main(String[] args) {
 		try {
 			
-			if(gui) {
-		        EventQueue.invokeLater(new Runnable() {
-		            
-		            @Override
-		            public void run() {
-		            	GUI = new MainPaint();
-		            	GUI.setVisible(true);
-		            }
-		        });
-			}
-			
-			//wait for UI to get initialized
-			Thread.sleep(1000);
-			
 			String server = args[0];
 			
-			Thread game = new GameThread(false, gui, GUI, server);
+			Thread game = new LeviGameThread(false, gui, server);
 			game.run();	
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public static MainPaint startUI(int x, int y){
+		if(gui) {
+	        EventQueue.invokeLater(new Runnable() {
+	            
+	            @Override
+	            public void run() {
+	            	GUI = new MainPaint(x, y);
+	            	GUI.setVisible(true);
+	            }
+	        });
+		}
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		log.info("GUI initialized");
+		return GUI;
 	}
 }
