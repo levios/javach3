@@ -3,6 +3,7 @@ package connection;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +41,7 @@ public class Connection {
 
 	private String serverUrl;
 
-	private static Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+	private static Gson GSON = new GsonBuilder().create();
 
 	public Connection(String server) {
 		this(server, false, false);
@@ -125,17 +126,18 @@ public class Connection {
 			conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("POST");
 			conn.setRequestProperty("User-Agent", USER_AGENT);
-			conn.setRequestProperty("Content-Type", "application/json;charset=UTF-8");
 			conn.setRequestProperty("TEAMTOKEN", TOKEN);
+			conn.setDoOutput(true);
+			conn.setDoInput(true);
+			conn.setRequestProperty("Content-Type", "application/json");
 
 			// Send post request
 			jsonData = jsonData == null ? "" : jsonData;
 			log.info("{} POST to [{}]. INPUT: {}", topic, Url, prettify(jsonData));
-			conn.setDoOutput(true);
-			DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
-			wr.writeBytes(jsonData);
-			wr.flush();
-			wr.close();
+			OutputStream os = conn.getOutputStream();
+			os.write(jsonData.getBytes());
+			os.close();
+			os.flush();
 
 			int responseCode = conn.getResponseCode();
 			if (responseCode != 200) {

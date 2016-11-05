@@ -86,7 +86,7 @@ public class GameThread extends Thread {
 			game.updateShipStatus();
 			game.executeStrategy();
 			
-			Thread.sleep(1000);
+			Thread.sleep(2000);
 
 			cycleStartTime = System.nanoTime();
 

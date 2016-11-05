@@ -2,10 +2,9 @@ package ui;
 
 import game.GameSession;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
+import java.awt.*;
+import java.awt.image.BufferStrategy;
+import java.util.Objects;
 
 import javax.swing.JPanel;
 
@@ -41,11 +40,13 @@ class PaintPanel extends JPanel {
 		super.paintComponent(g);
 		Graphics2D drawImage = (Graphics2D) g;
 
-		double scaler = (double)this.getWidth() / (double)x;
+		double scaler = (double) this.getWidth() / (double) x;
+		drawImage.scale(scaler, scaler);
 
-		((Graphics2D) g).scale(scaler, scaler);
 		g.setFont(new Font("TimesRoman", Font.PLAIN, 14));
 
+		drawImage.setColor(OCEAN_BLUE);
+		drawImage.fillRect(0, 0, session.map.width, session.map.height);
 
 		// Segedvonalak
 		for (int i = 0; i <= x; i += 100) {
@@ -58,22 +59,23 @@ class PaintPanel extends JPanel {
 			drawImage.setColor(Color.LIGHT_GRAY);
 			drawImage.drawLine(0, i, x, i);
 			drawImage.setColor(Color.DARK_GRAY);
-			if(i != y)
+			if (i != y)
 				drawImage.drawString("" + (y - i), 0, i + 14);
 		}
 
 		if (session != null) {
-			drawImage.setColor(OCEAN_BLUE);
-			drawImage.fillRect(0, 0, session.map.width, session.map.height);
+
 			// Draw islands
 			drawImage.setColor(ISLAND_SAND);
-			session.map.islands.forEach(island -> drawImage.fillOval(
-					(int) (island.x() - island.r()),
-					(int) (y - island.y() - island.r()),
-					(int) (island.r() * 2),
-					(int) (island.r() * 2)));
-
-			// Draw radar views
+			session.map.islands.forEach(island -> {
+				drawImage.translate(island.x(), y - island.y());
+				drawImage.fillOval(
+						(int) (-island.r()),
+						(int) (-island.r()),
+						(int) (island.r() * 2),
+						(int) (island.r() * 2));
+				drawImage.translate(-island.x(), - (y-island.y()));
+			});
 
 			// Draw ships
 			session.myShips.forEach(ship -> {
@@ -82,8 +84,8 @@ class PaintPanel extends JPanel {
 
 				drawImage.setColor(SONAR_SEAWEED);
 				drawImage.fillOval(
-						(- session.mapConfiguration.sonarRange),
-						(- session.mapConfiguration.sonarRange),
+						(-session.mapConfiguration.sonarRange),
+						(-session.mapConfiguration.sonarRange),
 						(session.mapConfiguration.sonarRange * 2),
 						(session.mapConfiguration.sonarRange * 2));
 
@@ -98,6 +100,36 @@ class PaintPanel extends JPanel {
 				drawImage.rotate(Math.toRadians(-(90 - ship.rotation)));
 				drawImage.translate(-ship.position.x, -(y - ship.position.y));
 			});
+
+//			// Draw enemy ships
+//			session.map.ships.stream().filter(x-> !Objects.equals(x.owner, "HornPub")).forEach(ship->{
+//				int red = (ship.owner.hashCode() * 12345) % 255;
+//				int green = (ship.owner.hashCode() * 77777) % 255;
+//				int blue = (ship.owner.hashCode() * 7654321) % 255;
+//				Color enemyColor = new Color(red,green, blue);
+//
+//				drawImage.translate(ship.position.x, y - ship.position.y);
+//				drawImage.rotate(Math.toRadians(90 - ship.rotation));
+//
+//				drawImage.setColor(enemyColor);
+//				drawImage.drawOval(
+//						(-session.mapConfiguration.sonarRange),
+//						(-session.mapConfiguration.sonarRange),
+//						(session.mapConfiguration.sonarRange * 2),
+//						(session.mapConfiguration.sonarRange * 2));
+//
+//				drawImage.setColor(HORNPUB_HEAT);
+//				drawImage.drawOval(
+//						(int) (-ship.r),
+//						(int) (-ship.r),
+//						(int) (ship.r * 2),
+//						(int) (ship.r * 2));
+//
+//				drawImage.setColor(GRASS_GREEN);
+//				drawImage.fillPolygon(makeTriangleX(ship.r), makeTriangleY(ship.r), 3);
+//				drawImage.rotate(Math.toRadians(-(90 - ship.rotation)));
+//				drawImage.translate(-ship.position.x, -(y - ship.position.y));
+//			});
 
 			// Draw Statistics
 			drawStatistics(drawImage);

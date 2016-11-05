@@ -192,9 +192,9 @@ public class GameSession {
 			return readings;
 		}).collect(Collectors.toList());
 
-//		this.myShips.forEach(s -> {
-//			this.connection.move(this.gameId, s.id, 3, 3);
-//		});
+		this.myShips.forEach(s -> {
+			this.connection.move(this.gameId, s.id, 0.1, 0.3);
+		});
 
 	}
 }

@@ -6,6 +6,7 @@ public class Circular {
 
 	/**
 	 * Gets the Radius of the circular object
+	 *
 	 * @return Radius of the circular object
 	 */
 	public double r() {
@@ -14,6 +15,7 @@ public class Circular {
 
 	/**
 	 * Y coordinate of the Circular object's center
+	 *
 	 * @return Y coordinate of the Circular object's center
 	 */
 	public double y() {
@@ -22,6 +24,7 @@ public class Circular {
 
 	/**
 	 * X coordinate of the Circular object's center
+	 *
 	 * @return X coordinate of the Circular object's center
 	 */
 	public double x() {
@@ -30,6 +33,7 @@ public class Circular {
 
 	/**
 	 * Checks to see if overlaps with the other circular object
+	 *
 	 * @param other target of the overlap check
 	 * @return true if there is an intersection between the two objects
 	 */
@@ -40,6 +44,7 @@ public class Circular {
 
 	/**
 	 * Moves the object to the given coordinates
+	 *
 	 * @param X target X coordinate
 	 * @param Y target Y coordinate
 	 */
