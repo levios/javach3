@@ -22,7 +22,7 @@ class PaintPanel extends JPanel {
 
 	private final int x;
 	private final int y;
-	private final int fontHeightInPixel = 20;
+	private final int fontHeightInPixel = 28;
 	private final int marginFromXEndInPixels = 250;
 	private long paintStartTime;
 
@@ -32,6 +32,7 @@ class PaintPanel extends JPanel {
 		setBackground(Color.DARK_GRAY);
 		this.setFocusable(true);
 		this.grabFocus();
+
 	}
 
 	@Override
@@ -40,9 +41,26 @@ class PaintPanel extends JPanel {
 		super.paintComponent(g);
 		Graphics2D drawImage = (Graphics2D) g;
 
-//		g.translate(10, 10);
-//		((Graphics2D) g).scale(0.7, 0.7);
+		double scaler = (double)this.getWidth() / (double)x;
+
+		((Graphics2D) g).scale(scaler, scaler);
 		g.setFont(new Font("TimesRoman", Font.PLAIN, 14));
+
+
+		// Segedvonalak
+		for (int i = 0; i <= x; i += 100) {
+			drawImage.setColor(Color.LIGHT_GRAY);
+			drawImage.drawLine(i, 0, i, y);
+			drawImage.setColor(Color.DARK_GRAY);
+			drawImage.drawString("" + i, i, y);
+		}
+		for (int i = 0; i <= y; i += 100) {
+			drawImage.setColor(Color.LIGHT_GRAY);
+			drawImage.drawLine(0, i, x, i);
+			drawImage.setColor(Color.DARK_GRAY);
+			if(i != y)
+				drawImage.drawString("" + (y - i), 0, i + 14);
+		}
 
 		if (session != null) {
 			drawImage.setColor(OCEAN_BLUE);
