@@ -13,7 +13,7 @@ public class MainPaint extends JFrame {
 
     public MainPaint(int x, int y) {
         setTitle("test paint");
-        setSize(x, y);       
+        setSize(x + 50, y + 80);       
         
         paintPan = new PaintPanel(x, y);
         add(paintPan, BorderLayout.CENTER);
