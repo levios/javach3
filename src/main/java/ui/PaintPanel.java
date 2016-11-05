@@ -1,48 +1,52 @@
 package ui;
 
-import game.Circular;
 import game.GameSession;
-import game.Submarine;
 
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.util.Arrays;
 
 import javax.swing.JPanel;
-
-import model.MapConfiguration;
 
 class PaintPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 
-	private Color DARK_GREEN = new Color(0, 51, 0);
+	private final Color ISLAND_SAND = new Color(145, 141, 77);
+	private final Color OCEAN_BLUE = new Color(119, 207, 255);
+	private final Color HORNPUB_HEAT = new Color(205, 27, 17);
+	private final Color SONAR_SEAWEED = new Color(65, 255, 70, 62);
+	private final Color GRASS_GREEN = new Color(143, 255, 40, 206);
 
 	private static volatile GameSession session = null;
 
 	private final int x;
 	private final int y;
 	private final int fontHeightInPixel = 28;
-	private final int marginFromXEndInPixels = 220;
-	
+	private final int marginFromXEndInPixels = 250;
+	private long paintStartTime;
+
 	public PaintPanel(int x, int y) {
 		this.x = x;
 		this.y = y;
-		setBackground(Color.ORANGE);
+		setBackground(Color.DARK_GRAY);
 		this.setFocusable(true);
 		this.grabFocus();
+
 	}
 
 	@Override
 	public void paintComponent(Graphics g) {
+		this.paintStartTime = System.currentTimeMillis();
 		super.paintComponent(g);
 		Graphics2D drawImage = (Graphics2D) g;
 
-//		g.translate(10, 10);
+		double scaler = (double)this.getWidth() / (double)x;
+
+		((Graphics2D) g).scale(scaler, scaler);
 		g.setFont(new Font("TimesRoman", Font.PLAIN, 14));
-		
-		
+
+
 		// Segedvonalak
 		for (int i = 0; i <= x; i += 100) {
 			drawImage.setColor(Color.LIGHT_GRAY);
@@ -59,28 +63,60 @@ class PaintPanel extends JPanel {
 		}
 
 		if (session != null) {
+			drawImage.setColor(OCEAN_BLUE);
+			drawImage.fillRect(0, 0, session.map.width, session.map.height);
 			// Draw islands
-			drawImage.setColor(Color.RED);
+			drawImage.setColor(ISLAND_SAND);
 			session.map.islands.forEach(island -> drawImage.fillOval(
 					(int) (island.x() - island.r()),
-					(int)(y - island.y() - island.r()), 
+					(int) (y - island.y() - island.r()),
 					(int) (island.r() * 2),
 					(int) (island.r() * 2)));
 
+			// Draw radar views
+
 			// Draw ships
-			drawImage.setColor(Color.BLUE);
-			session.myShips.forEach(ship -> drawImage.fillOval(
-					(int) (ship.position.x - session.submarineSize),
-					(int)(y - ship.position.y - session.submarineSize),
-					(int) (session.submarineSize * 2),
-					(int) (session.submarineSize * 2)));
-			
+			session.myShips.forEach(ship -> {
+				drawImage.translate(ship.position.x, y - ship.position.y);
+				drawImage.rotate(Math.toRadians(ship.rotation));
+
+				drawImage.setColor(SONAR_SEAWEED);
+				drawImage.fillOval(
+						(- session.mapConfiguration.sonarRange),
+						(- session.mapConfiguration.sonarRange),
+						(session.mapConfiguration.sonarRange * 2),
+						(session.mapConfiguration.sonarRange * 2));
+
+				drawImage.setColor(HORNPUB_HEAT);
+				drawImage.fillOval(
+						(int) (-ship.r),
+						(int) (-ship.r),
+						(int) (ship.r * 2),
+						(int) (ship.r * 2));
+				drawImage.setColor(GRASS_GREEN);
+				drawImage.fillPolygon(makeTriangleX(ship.r), makeTriangleY(ship.r), 3);
+				drawImage.rotate(Math.toRadians(-ship.rotation));
+				drawImage.translate(-ship.position.x, -(y - ship.position.y));
+			});
+
 			// Draw Statistics
 			drawStatistics(drawImage);
 		}
 	}
-	
-	void drawStatistics(Graphics2D drawImage){
+
+	private int[] makeTriangleY(double r) {
+		return new int[]{
+				0, 0, (int) r
+		};
+	}
+
+	private int[] makeTriangleX(double r) {
+		return new int[]{
+				(int) -r, (int) r, 0
+		};
+	}
+
+	void drawStatistics(Graphics2D drawImage) {
 		drawImage.setColor(Color.BLACK);
 		drawImage.drawString("round: " + session.gameInfo.round, x - marginFromXEndInPixels, (fontHeightInPixel * 1));
 		drawImage.drawString("roundLength: " + session.gameInfo.mapConfiguration.roundLength, x - marginFromXEndInPixels, (fontHeightInPixel * 2));
@@ -100,6 +136,9 @@ class PaintPanel extends JPanel {
 		drawImage.drawString("extendedSonarRange: " + session.gameInfo.mapConfiguration.extendedSonarRange, x - marginFromXEndInPixels, (fontHeightInPixel * 15));
 		drawImage.drawString("extendedSonarRounds: " + session.gameInfo.mapConfiguration.extendedSonarRounds, x - marginFromXEndInPixels, (fontHeightInPixel * 16));
 		drawImage.drawString("extendedSonarCooldown: " + session.gameInfo.mapConfiguration.extendedSonarCooldown, x - marginFromXEndInPixels, (fontHeightInPixel * 17));
+		drawImage.drawString("----------------------------", x - marginFromXEndInPixels, (fontHeightInPixel * 18));
+		drawImage.drawString("- TOTAL THINK: ?", x - marginFromXEndInPixels, (fontHeightInPixel * 19));
+		drawImage.drawString("- TOTAL DRAW: " + (System.currentTimeMillis() - this.paintStartTime) + "ms", x - marginFromXEndInPixels, (fontHeightInPixel * 20));
 	}
 
 	public void refresh(GameSession session) {

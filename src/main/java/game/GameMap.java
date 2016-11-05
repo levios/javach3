@@ -8,8 +8,8 @@ import model.MapConfiguration;
 public class GameMap {
 
 	private MapConfiguration rules;
-	private Integer height;
-	private Integer width;
+	public Integer height;
+	public Integer width;
 	public List<Circular> islands;
 	public List<Submarine> ships;
 	private Map<Integer, Submarine> shipMap;

@@ -26,16 +26,14 @@ public class GameThread extends Thread {
 	private static final long TIME_TO_PRECALC = (TEST_LENGTH_IN_NANOSEC / 1000000) / 2;
 
 	private final boolean isDebug;
-	private final boolean gui;
+	private final boolean hasGui;
 
 	private static final boolean INSTA_EXPRESS_ACTIONS = true;
-	public static final Integer[] VELOCITY = (Integer[]) Arrays.asList(170, 150, 130, 110).toArray();
 
-
-	public GameThread(boolean isDebug, boolean gui, String server) {
+	public GameThread(boolean isDebug, boolean hasGui, String server) {
 		conn = new Connection(server);
 		this.isDebug = isDebug;
-		this.gui = gui;
+		this.hasGui = hasGui;
 
 		log.info("**********************************************");
 		log.info("**********************************************");
@@ -75,7 +73,7 @@ public class GameThread extends Thread {
 	private void doActuallyRun() throws Exception {
 		startTime = System.nanoTime();
 		
-		GameSession game = new GameSession(conn, gui);
+		GameSession game = new GameSession(conn, hasGui);
 		
 		game.start();
 
@@ -86,7 +84,7 @@ public class GameThread extends Thread {
 
 			game.updateGameInfo();
 			game.updateShipStatus();
-//			game.executeStrategy();
+			game.executeStrategy();
 			
 			Thread.sleep(1000);
 

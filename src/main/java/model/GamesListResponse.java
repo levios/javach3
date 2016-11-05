@@ -12,7 +12,7 @@ public class GamesListResponse {
 
 	@SerializedName("games")
 	@Expose
-	private List<Integer> games = new ArrayList<Integer>();
+	private List<Long> games = new ArrayList<>();
 	@SerializedName("message")
 	@Expose
 	private String message;
@@ -24,7 +24,7 @@ public class GamesListResponse {
 	 * 
 	 * @return The games
 	 */
-	public List<Integer> getGames() {
+	public List<Long> getGames() {
 		return games;
 	}
 
@@ -33,7 +33,7 @@ public class GamesListResponse {
 	 * @param games
 	 *            The games
 	 */
-	public void setGames(List<Integer> games) {
+	public void setGames(List<Long> games) {
 		this.games = games;
 	}
 
