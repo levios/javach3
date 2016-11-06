@@ -1,7 +1,9 @@
 package game;
 
+import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
+
 public class Circular {
-	public Vector position;
+	public Vector2D position;
 	public double r;
 
 	/**
@@ -19,7 +21,7 @@ public class Circular {
 	 * @return Y coordinate of the Circular object's center
 	 */
 	public double y() {
-		return this.position.y;
+		return this.position.getY();
 	}
 
 	/**
@@ -28,7 +30,7 @@ public class Circular {
 	 * @return X coordinate of the Circular object's center
 	 */
 	public double x() {
-		return this.position.x;
+		return this.position.getX();
 	}
 
 	/**
@@ -38,7 +40,7 @@ public class Circular {
 	 * @return true if there is an intersection between the two objects
 	 */
 	public boolean checkIntersection(Circular other) {
-		double distance = this.position.add(other.position.negate()).getMagnitude();
+		double distance = this.position.distance(other.position);
 		return (distance < (this.r + other.r));
 	}
 
@@ -49,16 +51,19 @@ public class Circular {
 	 * @param Y target Y coordinate
 	 */
 	public void moveTo(double X, double Y) {
-		this.position.x = X;
-		this.position.y = Y;
+		this.position = new Vector2D(X,Y);
 	}
 
-	public void move(Vector delta) {
-		this.position.addInPlace(delta);
+	/**
+	 *
+	 * @param delta
+	 */
+	public void move(Vector2D delta) {
+		this.position = this.position.add(delta);
 	}
 
 	public Circular(double x, double y, double r) {
-		this.position = new Vector(x, y);
+		this.position = new Vector2D(x, y);
 		this.r = r;
 	}
 }
