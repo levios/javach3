@@ -20,7 +20,7 @@ import static model.ErrorCode.*;
 public class GameSession {
 	private static Logger log = LoggerFactory.getLogger(GameSession.class);
 
-	Long gameId;
+	public Long gameId;
 	private Connection connection;
 	private GameState state = GameState.UNINITIALIZED;
 
@@ -89,12 +89,13 @@ public class GameSession {
 		}
 
 		if (full) {
+			//map
+			this.map = new GameMap(gameInfo.mapConfiguration);
+
 			Submarine.setBounds(this.mapConfiguration);
 			Torpedo.setBounds(this.mapConfiguration);
 			// Submarines
 			this.myShips = this.createShips();
-			//map
-			this.map = new GameMap(gameInfo.mapConfiguration, myShips.stream().map(ship -> ship.id).collect(Collectors.toList()));
 		}
 
 		this.connectionStatus = gameInfo.connectionStatus;
@@ -194,7 +195,7 @@ public class GameSession {
 //		this.myShips.forEach(s -> {
 //			this.connection.move(this.gameId, s.id, this.mapConfiguration.maxAccelerationPerRound, this.mapConfiguration.maxSteeringPerRound);
 //		});
-		
+
 		//if(no enemy ships around)
 //		this.myShips.forEach(ship -> ship.setStrategy(Strategy.MOVEAROUND));
 		this.myShips.get(0).setStrategy(Strategy.MOVEAROUND);
@@ -205,6 +206,25 @@ public class GameSession {
 //		this.myShips.forEach(ship -> ship.executeStrategy());
 		this.myShips.get(0).executeStrategy();
 		this.myShips.get(1).executeStrategy();
+
+		this.myShips.forEach(s -> {
+			boolean alreadyShot = false;
+			boolean alreadyMoved = false;
+			while(!s.actionQueue.isEmpty()){
+				Action action = s.actionQueue.peek();
+				if (action instanceof Action.MoveAction && !alreadyMoved) {
+					Action.MoveAction moveAction = ((Action.MoveAction) action);
+					this.connection.move(this.gameId, s.id, moveAction.acceleration, moveAction.steering);
+					alreadyMoved = true;
+				} else if (action instanceof Action.ShootAction && !alreadyShot) {
+					Action.ShootAction shootAction = ((Action.ShootAction) action);
+					this.connection.shoot(this.gameId, s.id, shootAction.direction);
+					alreadyShot = true;
+				} else {
+					break;
+				}
+			}
+		});
 
 //		}
 

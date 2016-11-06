@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import model.MapConfiguration;
 
+import static utils.Constants.TEAM_NAME;
+
 public class GameMap {
 	private static Logger log = LoggerFactory.getLogger(GameMap.class);
 
@@ -16,14 +18,12 @@ public class GameMap {
 	public Integer width;
 	public List<Circular> islands;
 	public List<ProjectileLike> enemyShips;
-	public List<Long> myShipIds;
 	public List<ProjectileLike> torpedos;
 //	public Map<Integer, ProjectileLike> enemyShipsMap = new HashMap<>();
 //	public Map<Integer, Torpedo> torpedoMap = new HashMap<>();
 
-	public GameMap(MapConfiguration mapConfiguration, List<Long> myShipIds) {
+	public GameMap(MapConfiguration mapConfiguration) {
 		this.mapConfig = mapConfiguration;
-		this.myShipIds = myShipIds;
 		this.width = mapConfiguration.width;
 		this.height = mapConfiguration.height;
 
@@ -45,7 +45,7 @@ public class GameMap {
 			Long id = e.id;
 			if (Objects.equals("Submarine", e.type)) {
 
-				if (!myShipIds.contains(id)) {
+				if (!Objects.equals(e.owner.name, TEAM_NAME)) {
 					PlayerObject enemy = new PlayerObject(e.id, e.owner.name,
 							PlayerObjectType.SUBMARINE, e.position.x, e.position.y, mapConfig.submarineSize, e.velocity, e.angle);
 					this.enemyShips.add(enemy);
