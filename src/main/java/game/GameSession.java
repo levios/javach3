@@ -1,26 +1,19 @@
 package game;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Collection;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import strategy.Strategy;
 import ui.MainPaint;
-//import utils.Transformer;
 import connection.Connection;
 import main.Main;
 import model.*;
+
 import static model.ErrorCode.*;
 
 public class GameSession {
@@ -99,7 +92,7 @@ public class GameSession {
 			Submarine.setBounds(this.mapConfiguration);
 			Torpedo.setBounds(this.mapConfiguration);
 			// Submarines
-			this.myShips = this.createShips(gameInfo.mapConfiguration);
+			this.myShips = this.createShips();
 			//map
 			this.map = new GameMap(gameInfo.mapConfiguration, myShips.stream().map(ship -> ship.id).collect(Collectors.toList()));
 		}
@@ -121,11 +114,10 @@ public class GameSession {
 		GUI.refresh(this);
 	}
 
-	private List<Submarine> createShips(MapConfiguration mapConfiguration) {
+	private List<Submarine> createShips() {
 		List<model.Submarine> submarineModels = this.connection.submarine(this.gameId);
 		List<Submarine> submarines = submarineModels.stream().map(s ->
-				new Submarine(s.id, s.owner.name, s.position.x, s.position.y, s.velocity, s.angle, mapConfiguration.width, mapConfiguration.height,
-						this, connection))
+				new Submarine(s.id, s.owner.name, s.position.x, s.position.y, s.velocity, s.angle, this.map))
 				.collect(Collectors.toList());
 		submarines.forEach(s -> myShipMap.put(s.id, s));
 		return submarines;
@@ -192,45 +184,15 @@ public class GameSession {
 	}
 
 	public void executeStrategy() {
-		List<Object> sonarReadings = this.myShips.stream().map(s -> {
+		List<SonarReadings> sonarReadings = this.myShips.stream().map(s -> {
 			List<Entity> entities = this.connection.sonar(this.gameId, s.id);
 			SonarReadings readings = new SonarReadings(entities, s.position, this.mapConfiguration.sonarRange);
 			this.map.applyReadings(readings);
 			return readings;
 		}).collect(Collectors.toList());
 
-//		this.myShips.forEach(s -> {
-//			this.connection.move(this.gameId, s.id, this.mapConfiguration.maxAccelerationPerRound, this.mapConfiguration.maxSteeringPerRound);
-//		});
-		
-		//if(no enemy ships around)
-//		this.myShips.forEach(ship -> ship.setStrategy(Strategy.MOVEAROUND));
-		this.myShips.get(0).setStrategy(Strategy.MOVEAROUND);
-		//else
-		// attach enemy ship
-		
-//		this.myShips.forEach(ship -> ship.executeStrategy());
-		this.myShips.get(0).executeStrategy();
-		
-//		// shoot
-//		Submarine first = this.myShips.get(0);
-//		if(canShootTorpedo(first.id)){
-//			//shoot with first
-//			this.connection.shoot(this.gameId, first.id, 0.0);
-//			torpedosShotInRounds.put(first.id, round);
-//		}
-//		Submarine second = this.myShips.get(1);
-//		if(canShootTorpedo(second.id)){
-//			//shoot with second
-//			this.connection.shoot(this.gameId, second.id, 0.0);
-//			torpedosShotInRounds.put(second.id, round);
-//		}
+		this.myShips.forEach(s ->
+				this.connection.move(this.gameId, s.id, this.mapConfiguration.maxAccelerationPerRound, this.mapConfiguration.maxSteeringPerRound));
 
-	}
-
-	private boolean canShootTorpedo(Long submarineId) {
-		if(torpedosShotInRounds.get(submarineId) == null) return true;
-		if(this.round - torpedosShotInRounds.get(submarineId) >= this.mapConfiguration.torpedoCooldown) return true;
-		return false;
 	}
 }

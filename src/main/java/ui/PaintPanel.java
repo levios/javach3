@@ -19,7 +19,7 @@ class PaintPanel extends JPanel {
 	private final Color SONAR_SEAWEED = new Color(65, 255, 70, 62);
 	private final Color GRASS_GREEN = new Color(143, 255, 40, 206);
 	private final Color FOS_LILA = new Color(153, 0, 153);
-	
+
 	private final Color ENEMY_SHIP = new Color(240, 217, 65);
 
 	private static volatile GameSession session = null;
@@ -79,12 +79,12 @@ class PaintPanel extends JPanel {
 						(int) (-island.r()),
 						(int) (island.r() * 2),
 						(int) (island.r() * 2));
-				drawImage.translate(-island.x(), - (height-island.y()));
+				drawImage.translate(-island.x(), -(height - island.y()));
 			});
 
 			// Draw ships
 			session.myShips.forEach(ship -> {
-				drawImage.translate(ship.position.x, height - ship.position.y);
+				drawImage.translate(ship.position.getX(), height - ship.position.getY());
 				drawImage.rotate(Math.toRadians(90 - ship.rotation));
 
 				drawImage.setColor(SONAR_SEAWEED);
@@ -103,31 +103,31 @@ class PaintPanel extends JPanel {
 				drawImage.setColor(GRASS_GREEN);
 				drawImage.fillPolygon(makeTriangleX(ship.r), makeTriangleY(ship.r), 3);
 				drawImage.rotate(Math.toRadians(-(90 - ship.rotation)));
-				drawImage.translate(-ship.position.x, -(height - ship.position.y));
+				drawImage.translate(-ship.position.getX(), -(height - ship.position.getY()));
 			});
-			
+
 			//draw ship's next position
 			drawImage.setColor(Color.BLACK);
 			session.myShips
 					.stream()
 					.filter(ship -> !ship.nextPositions.isEmpty())
 					.forEach(
-							ship -> drawImage.drawLine((int) ship.position.x,
-									(int) (height-ship.position.y),
+							ship -> drawImage.drawLine((int) ship.position.getX(),
+									(int) (height - ship.position.getY()),
 									(int) ship.nextPositions.get(0).getX(),
-									(int) (height-ship.nextPositions.get(0).getY())));
-			
+									(int) (height - ship.nextPositions.get(0).getY())));
+
 			// Draw Torpedos 
-			session.map.torpedos.stream().forEach(torpedo -> {
-				double x = torpedo.position.x;
-				double y = torpedo.position.y;
+			session.map.torpedos.forEach(torpedo -> {
+				double x = torpedo.position.getX();
+				double y = torpedo.position.getY();
 				drawImage.setColor(FOS_LILA);
-				drawImage.fillPolygon(new int[]{(int) x, (int) (x-10), (int)x-10}, 
-						new int[]{(int) (height -y), (int) (height - y-5), (int)(height - y + 5)}, 3);
+				drawImage.fillPolygon(new int[]{(int) x, (int) (x - 10), (int) x - 10},
+						new int[]{(int) (height - y), (int) (height - y - 5), (int) (height - y + 5)}, 3);
 			});
-			
+
 			session.map.enemyShips.forEach(ship -> {
-				drawImage.translate(ship.position.x, height - ship.position.y);
+				drawImage.translate(ship.position.getX(), height - ship.position.getY());
 				drawImage.rotate(Math.toRadians(90 - ship.rotation));
 
 				drawImage.setColor(ENEMY_SHIP);
@@ -139,7 +139,7 @@ class PaintPanel extends JPanel {
 				drawImage.setColor(GRASS_GREEN);
 				drawImage.fillPolygon(makeTriangleX(ship.r), makeTriangleY(ship.r), 3);
 				drawImage.rotate(Math.toRadians(-(90 - ship.rotation)));
-				drawImage.translate(-ship.position.x, -(height - ship.position.y));
+				drawImage.translate(-ship.position.getX(), -(height - ship.position.getY()));
 			});
 
 //			// Draw enemy ships
@@ -216,7 +216,6 @@ class PaintPanel extends JPanel {
 
 	public void refresh(GameSession session) {
 		PaintPanel.session = session;
-//		repaint();
 		this.invalidate();
 	}
 }
