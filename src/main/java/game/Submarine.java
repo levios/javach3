@@ -1,6 +1,7 @@
 package game;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +34,7 @@ public class Submarine extends ProjectileLike {
 	private  GameSession session;
 	private final Connection conn;
 	public List<Vector2D> nextPositions = new ArrayList<>();
-	
+	private int torpedosShotInRound;
 	// epp milyen strategiat hajt vegre
 	private Strategy myStrategy;
 
@@ -90,6 +91,7 @@ public class Submarine extends ProjectileLike {
 	 */
 	public void executeStrategy() {
 		switch (this.myStrategy) {
+		
 		case MOVEAROUND:
 			// get current coordinate
 			Vector2D current = new Vector2D(this.position.x, this.position.y);
@@ -111,9 +113,11 @@ public class Submarine extends ProjectileLike {
 			Vector2D targetVector = nextTargetPosition.subtract(current);
 			
 			// calculate angle of target vector
-			double targetVectorAngle = Math.atan2(targetVector.getY(), targetVector.getX()) * 180 / Math.PI;
+			double targetVectorAngle = getAngleOfVector(targetVector);
+			log.info("TargetVectorAngle calculated: {}", targetVectorAngle);
 			
 			//current angle is in "angle"
+			log.info("Current angle: {}", angle);
 			
 			//calc wood-be-perfect angle
 			double angleBetweenTwoVectors = targetVectorAngle - angle;
@@ -157,16 +161,46 @@ public class Submarine extends ProjectileLike {
 			 * Ez arrol szol, hogy jon az ellen, mi meg szejjel lojjuk
 			 * */
 			
-//			if(!session.map.enemyShips.isEmpty()){
-//				
-//				//shoot 'em
-//				conn.shoot(session.gameId, this.id, angleBetweenTwoVectors);
-//				
-//			}
+			if(!session.map.enemyShips.isEmpty()){
+				
+				// TODO: a legmesszebbit kene ?
+				Vector2D enemyShip = new Vector2D(session.map.enemyShips.get(0).x(), session.map.enemyShips.get(0).y());
+				
+				//current vector
+				Vector2D currentVector = new Vector2D(this.position.x, this.position.y);
+				
+				//target Vector
+				Vector2D targetVector2 = enemyShip.subtract(currentVector);
+				
+				double targetVectorAngle2 = getAngleOfVector(targetVector2);
+				if(targetVectorAngle2 < 0){
+					targetVectorAngle2 += 360;
+				}
+				log.info("Ship[{}]: TargetVectorAngle calculated: {}", this.id, targetVectorAngle2);
+				
+				if(canShootTorpedo()) {
+					conn.shoot(session.gameId, this.id, targetVectorAngle2);
+					torpedosShotInRound = session.gameInfo.round;
+				}
+			}
 			
 			
 			break;
 		}
+	}
+
+	/**    /\
+	 * |   /
+	 * |  /
+	 * | /__
+	 * |/alfa)
+	 * +----------------
+	 * Return the angle [alfa] of this vector
+	 * @param targetVector2
+	 * @return
+	 */
+	private double getAngleOfVector(Vector2D targetVector2) {
+		return Math.atan2(targetVector2.getY(), targetVector2.getX()) * 180 / Math.PI;
 	}
 
 	private void planNextMoves() {		
@@ -178,6 +212,12 @@ public class Submarine extends ProjectileLike {
 
 	public void setStrategy(Strategy strategy) {
 		myStrategy = strategy;
+	}
+	
+	private boolean canShootTorpedo() {
+		if(torpedosShotInRound < 0) return true;
+		if(session.gameInfo.round - torpedosShotInRound >= session.mapConfiguration.torpedoCooldown) return true;
+		return false;
 	}
 
 }
