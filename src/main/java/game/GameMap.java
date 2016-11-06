@@ -13,7 +13,7 @@ import static utils.Constants.TEAM_NAME;
 public class GameMap {
 	private static Logger log = LoggerFactory.getLogger(GameMap.class);
 
-	private MapConfiguration mapConfig;
+	public MapConfiguration mapConfig;
 	public Integer height;
 	public Integer width;
 	public List<Circular> islands;

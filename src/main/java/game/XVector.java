@@ -52,5 +52,14 @@ public class XVector {
 		double radRotation = Math.toRadians(rotation);
 		return new XVector(Math.cos(radRotation), Math.sin(radRotation));
 	}
+	
+	public void subtractInPlace(XVector other) {
+		this.x -= other.x;
+		this.y -= other.y;
+	}
+
+	public static XVector subtract(XVector v1, XVector v2) {
+		return new XVector(v1.x - v2.x, v1.y - v2.y);
+	}
 
 }

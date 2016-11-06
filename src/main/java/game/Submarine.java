@@ -41,7 +41,8 @@ public class Submarine extends PlayerObject {
 	//	private boolean torpedosShotInRound;
 	public List<Vector2D> nextPositions = new ArrayList<>();
 	private Strategy myStrategy;
-
+	private int torpedosShotInRound;
+	
 	public static void setBounds(MapConfiguration rules) {
 		SONAR_COOLDOWN = rules.extendedSonarCooldown;
 		// SONAR_RANGE = rules.extendedSonarRange;
@@ -96,6 +97,7 @@ public class Submarine extends PlayerObject {
 					planNextMoves();
 				}
 				Vector2D nextTargetPosition = nextPositions.get(0);
+				log.info("NextTargetPosition calculated: {}", getAngleOfVector(nextTargetPosition));
 
 				// if I'm close enough, pop the Position out of the List AND add it to the end
 				if (current.distance(nextTargetPosition) < 100.0) {
@@ -151,26 +153,29 @@ public class Submarine extends PlayerObject {
 				if (!map.enemyShips.isEmpty()) {
 				
 				// TODO: a legmesszebbit kene ?
-				ProjectileLike enemy = session.map.enemyShips.get(0);
-Vector2D enemyShip = new Vector2D(map.enemyShips.get(0).x(), map.enemyShips.get(0).y());
 
-//current vector
-Vector2D currentVector = new Vector2D(this.position.getX(), this.position.getY());
+				ProjectileLike enemy = map.enemyShips.get(0);
+				Vector2D enemyShip = new Vector2D(enemy.x(), enemy.y());
+				
+				//current vector
+				Vector2D currentVector = new Vector2D(this.position.getX(), this.position.getY());
+				
+				//target Vector
+				Vector2D targetVector2 = enemyShip.subtract(currentVector);
 
-//target Vector
-Vector2D targetVector2 = enemyShip.subtract(currentVector);
 				
 				double distanceFromTarget = currentVector.distance(targetVector2);
-				int numberOfRoundsToReachTarget = (int) Math.ceil(distanceFromTarget/this.session.mapConfiguration.torpedoSpeed);
+				int numberOfRoundsToReachTarget = (int) Math.ceil(distanceFromTarget/this.map.mapConfig.torpedoSpeed);
 				
 				
 				// find out where enemy ship will be in numberOfRoundsToReachTarget rounds
-				Vector v = Vector.unit(enemy.rotation);
+				XVector v = XVector.unit(enemy.rotation);
 				v = v.scale(enemy.speed);
 				
-				//ha tul kozel van, mozogjon ellenkezo iranyba
-//				if(currentVector.distance(targetVector2) < session.mapConfiguration.torpedoExplosionRadius){
-//					conn.move(session.gameId, this.id, session.mapConfiguration.maxAccelerationPerRound, rotationDiff)
+//				// ha tul kozel van, mozogjon ellenkezo iranyba
+//				if(currentVector.distance(targetVector2) < map.mapConfig.torpedoExplosionRadius){
+//					this.actionQueue.add(Action.move(rotationDiff, map.mapConfig.maxAccelerationPerRound));
+////					conn.move(session.gameId, this.id, session.mapConfiguration.maxAccelerationPerRound, rotationDiff);
 //				}
 				
 				//hol lesz x kor mulva
@@ -185,12 +190,13 @@ Vector2D targetVector2 = enemyShip.subtract(currentVector);
 				log.info("Ship[{}]: TargetVectorAngle calculated: {}", this.id, targetVectorAngle2);
 				
 				if(canShootTorpedo()) {
+//					conn.shoot(map.gameId, this.id, targetVectorAngle2);
 					this.actionQueue.add(Action.shoot(targetVectorAngle2));
-					torpedosShotInRound = map.mapConfig.round;
+					torpedosShotInRound = this.map.mapConfig.rounds;
 
 				}
-
-
+				}
+				
 				break;
 		}
 	}
@@ -222,6 +228,13 @@ Vector2D targetVector2 = enemyShip.subtract(currentVector);
 	public void setStrategy(Strategy strategy) {
 		myStrategy = strategy;
 	}
+	
+
+	 private boolean canShootTorpedo() {
+	 		if(torpedosShotInRound < 0) return true;
+	 		if(map.mapConfig.rounds - torpedosShotInRound >= map.mapConfig.torpedoCooldown) return true;
+	 		return false;
+	 	}
 
 	public void actionExecuted(Action a) {
 		if (a instanceof Action.MoveAction) {
