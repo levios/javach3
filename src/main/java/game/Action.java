@@ -5,29 +5,29 @@ package game;
  */
 public interface Action {
 
-	public static class MoveAction implements Action {
+	class MoveAction implements Action {
 		public final double acceleration;
 		public final double steering;
 
-		MoveAction(double steering, double acceleration){
+		MoveAction(double steering, double acceleration) {
 			this.steering = steering;
 			this.acceleration = acceleration;
 		}
 	}
 
-	public static class ShootAction implements Action {
+	class ShootAction implements Action {
 		public final double direction;
 
-		ShootAction(double direction){
+		ShootAction(double direction) {
 			this.direction = direction;
 		}
 	}
 
-	public static MoveAction move(double steering, double acceleration){
+	static MoveAction move(double steering, double acceleration) {
 		return new MoveAction(steering, acceleration);
 	}
 
-	public static ShootAction shoot(double direction){
+	static ShootAction shoot(double direction) {
 		return new ShootAction(direction);
 	}
 }

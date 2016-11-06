@@ -28,16 +28,16 @@ public class Submarine {
 	public Double angle;
 	@SerializedName("hp")
 	@Expose
-	public Double hp;
+	public Integer hp;
 	@SerializedName("sonarCooldown")
 	@Expose
-	public Double sonarCooldown;
+	public Integer sonarCooldown;
 	@SerializedName("torpedoCooldown")
 	@Expose
-	public Double torpedoCooldown;
+	public Integer torpedoCooldown;
 	@SerializedName("sonarExtended")
 	@Expose
-	public Double sonarExtended;
+	public Integer sonarExtended;
 
 	@Override
 	public String toString() {

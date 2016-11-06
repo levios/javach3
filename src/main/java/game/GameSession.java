@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import strategy.Strategy;
 import ui.MainPaint;
 import connection.Connection;
 import main.Main;
@@ -31,7 +32,6 @@ public class GameSession {
 	public GameMap map;
 	public List<Submarine> myShips;
 	private Map<Long, Submarine> myShipMap;
-	private Map<Long, Integer> torpedosShotInRounds = new HashMap<>();
 
 	private final boolean gui;
 	private MainPaint GUI = null;
@@ -191,8 +191,22 @@ public class GameSession {
 			return readings;
 		}).collect(Collectors.toList());
 
-		this.myShips.forEach(s ->
-				this.connection.move(this.gameId, s.id, this.mapConfiguration.maxAccelerationPerRound, this.mapConfiguration.maxSteeringPerRound));
+//		this.myShips.forEach(s -> {
+//			this.connection.move(this.gameId, s.id, this.mapConfiguration.maxAccelerationPerRound, this.mapConfiguration.maxSteeringPerRound);
+//		});
+		
+		//if(no enemy ships around)
+//		this.myShips.forEach(ship -> ship.setStrategy(Strategy.MOVEAROUND));
+		this.myShips.get(0).setStrategy(Strategy.MOVEAROUND);
+		this.myShips.get(1).setStrategy(Strategy.CAMP);
+		//else
+		// attach enemy ship
+
+//		this.myShips.forEach(ship -> ship.executeStrategy());
+		this.myShips.get(0).executeStrategy();
+		this.myShips.get(1).executeStrategy();
+
+//		}
 
 	}
 }
