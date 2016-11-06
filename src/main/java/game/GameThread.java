@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import ui.MainPaint;
 import connection.Connection;
 
+import static java.lang.System.currentTimeMillis;
+
 public class GameThread extends Thread {
 
 
@@ -82,12 +84,14 @@ public class GameThread extends Thread {
 		
 		/************ FOCIKLUS ************/
 		while ((System.nanoTime() - startTime) < TEST_LENGTH_IN_NANOSEC) {
+			long timeBefore = currentTimeMillis();
 
 			game.updateGameInfo();
 			game.updateShipStatus();
 			game.executeStrategy();
+			game.lastTurnLength = currentTimeMillis() - timeBefore;
 			
-			Thread.sleep(game.mapConfiguration.roundLength);
+			Thread.sleep(game.mapConfiguration.roundLength - game.lastTurnLength);
 
 			cycleStartTime = System.nanoTime();
 

@@ -31,7 +31,7 @@ public class Submarine extends PlayerObject {
 	private static Integer MAX_ACCELERATION;
 	private static Integer MAX_STEERING;
 	private static Integer MAX_SPEED;
-	private static Integer TORPEDO_COOLDOWN;
+	private static int TORPEDO_COOLDOWN;
 	private static Integer SUBMARINE_RADIUS;
 
 	private final GameMap map;
@@ -80,8 +80,10 @@ public class Submarine extends PlayerObject {
 	 * executes current strategy
 	 */
 	public void executeStrategy() {
-		this.torpedoCooldown--;
-		this.sonarCooldown--;
+		this.torpedoCooldown = Math.max(0, this.torpedoCooldown-1);
+		this.sonarCooldown = Math.max(0, this.sonarCooldown-1);
+
+		log.info("Torpedo cooldown: [{}: {}] ", this.id, this.torpedoCooldown);
 
 		switch (this.myStrategy) {
 
@@ -164,7 +166,6 @@ public class Submarine extends PlayerObject {
 					log.info("Ship[{}]: TargetVectorAngle calculated: {}", this.id, targetVectorAngle2);
 
 					if (this.torpedoCooldown <= 0) {
-						this.torpedoCooldown = TORPEDO_COOLDOWN;
 						this.actionQueue.add(Action.shoot(targetVectorAngle2));
 					}
 				}
@@ -200,6 +201,19 @@ public class Submarine extends PlayerObject {
 
 	public void setStrategy(Strategy strategy) {
 		myStrategy = strategy;
+	}
+
+	public void actionExecuted(Action a) {
+		if (a instanceof Action.MoveAction) {
+			Action.MoveAction ma = (Action.MoveAction) a;
+			this.steer(ma.steering);
+			this.accelerate(ma.acceleration);
+			this.step();
+		} else if (a instanceof Action.ShootAction) {
+//			Action.ShootAction sa = (Action.ShootAction) a;
+			this.torpedoCooldown = TORPEDO_COOLDOWN +1;
+			log.info("Shoot successful for {}, updating cooldown to: {}", this.id, TORPEDO_COOLDOWN);
+		}
 	}
 
 }

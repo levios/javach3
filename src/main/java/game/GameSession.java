@@ -35,6 +35,7 @@ public class GameSession {
 
 	private final boolean gui;
 	private MainPaint GUI = null;
+	public long lastTurnLength;
 
 	public GameSession(Connection connection, boolean gui) {
 		this.connection = connection;
@@ -210,16 +211,24 @@ public class GameSession {
 		this.myShips.forEach(s -> {
 			boolean alreadyShot = false;
 			boolean alreadyMoved = false;
-			while(!s.actionQueue.isEmpty()){
+			while (!s.actionQueue.isEmpty()) {
 				Action action = s.actionQueue.peek();
 				if (action instanceof Action.MoveAction && !alreadyMoved) {
 					Action.MoveAction moveAction = ((Action.MoveAction) action);
-					this.connection.move(this.gameId, s.id, moveAction.acceleration, moveAction.steering);
-					alreadyMoved = true;
+					ErrorCode errorCode = this.connection.move(this.gameId, s.id, moveAction.acceleration, moveAction.steering);
+					if (errorCode == OK) {
+						s.actionExecuted(action);
+						alreadyMoved = true;
+						s.actionQueue.remove();
+					}
 				} else if (action instanceof Action.ShootAction && !alreadyShot) {
 					Action.ShootAction shootAction = ((Action.ShootAction) action);
-					this.connection.shoot(this.gameId, s.id, shootAction.direction);
-					alreadyShot = true;
+					ErrorCode errorCode = this.connection.shoot(this.gameId, s.id, shootAction.direction);
+					if (errorCode == OK) {
+						s.actionExecuted(action);
+						alreadyShot = true;
+						s.actionQueue.remove();
+					}
 				} else {
 					break;
 				}

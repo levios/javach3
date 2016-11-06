@@ -4,13 +4,9 @@ import game.GameSession;
 import game.Submarine;
 
 import java.awt.*;
-import java.awt.image.BufferStrategy;
 import java.util.List;
-import java.util.Objects;
 
 import javax.swing.JPanel;
-
-import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
 class PaintPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
@@ -31,6 +27,8 @@ class PaintPanel extends JPanel {
 	private final int fontHeightInPixel = 28;
 	private final int marginFromXEndInPixels = 250;
 	private long paintStartTime;
+	private int lineOffset = 0;
+	private Graphics2D imageForStatistics;
 
 	public PaintPanel(int x, int y) {
 		this.width = x;
@@ -124,8 +122,14 @@ class PaintPanel extends JPanel {
 				double x = torpedo.position.getX();
 				double y = torpedo.position.getY();
 				drawImage.setColor(FOS_LILA);
-				drawImage.fillPolygon(new int[]{(int) x, (int) (x - 10), (int) x - 10},
-						new int[]{(int) (height - y), (int) (height - y - 5), (int) (height - y + 5)}, 3);
+
+				drawImage.translate(x, height - y);
+				drawImage.rotate(Math.toRadians(90 - torpedo.rotation));
+
+				drawImage.fillPolygon(makeTriangleX(10), makeTriangleY(10), 3);
+
+				drawImage.rotate(Math.toRadians(-(90 - torpedo.rotation)));
+				drawImage.translate(-x, -(height - y));
 			});
 
 			session.map.enemyShips.forEach(ship -> {
@@ -187,36 +191,45 @@ class PaintPanel extends JPanel {
 
 	private int[] makeTriangleX(double r) {
 		return new int[]{
-				(int) -r, (int) r, 0
+				(int) -r/2, (int) r/2, 0
 		};
+	}
+
+	private void printLine(String str) {
+		imageForStatistics.drawString(str, width - marginFromXEndInPixels, (fontHeightInPixel * ++lineOffset));
 	}
 
 	void drawStatistics(Graphics2D drawImage, List<Submarine> myShips) {
 		drawImage.setColor(Color.BLACK);
-		int i = 0;
-		drawImage.drawString("round: " + session.gameInfo.round, width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
-		drawImage.drawString("roundLength: " + session.gameInfo.mapConfiguration.roundLength, width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
-		drawImage.drawString("rounds: " + session.gameInfo.mapConfiguration.rounds, width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
+		lineOffset = 0;
+		imageForStatistics = drawImage;
 
-		drawImage.drawString("myScore: " + session.gameInfo.scores.scores.myScore, width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
-		for(Submarine s : myShips){
-			drawImage.drawString("Ship["+s.id+"] HP: " + s.hp, width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
+		printLine("round: " + session.gameInfo.round);
+		printLine("roundLength: " + session.gameInfo.mapConfiguration.roundLength);
+		printLine("rounds: " + session.gameInfo.mapConfiguration.rounds);
+
+		printLine("myScore: " + session.gameInfo.scores.scores.myScore);
+		for (Submarine s : myShips) {
+			printLine("--- Ship[" + s.id + "]----");
+			printLine("HP: " + s.hp);
+			printLine("TORPEDO: " + s.torpedoCooldown);
+			printLine("SONAR: " + s.sonarCooldown);
 		}
-		drawImage.drawString("---------- TORPEDO --------", width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
-		drawImage.drawString("torpedoDamage: " + session.gameInfo.mapConfiguration.torpedoDamage, width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
-		drawImage.drawString("torpedoHitScore: " + session.gameInfo.mapConfiguration.torpedoHitScore, width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
-		drawImage.drawString("torpedoHitPenalty: " + session.gameInfo.mapConfiguration.torpedoHitPenalty, width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
-		drawImage.drawString("torpedoCooldown: " + session.gameInfo.mapConfiguration.torpedoCooldown, width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
-		drawImage.drawString("torpedoSpeed: " + session.gameInfo.mapConfiguration.torpedoSpeed, width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
-		drawImage.drawString("torpedoExplosionRadius: " + session.gameInfo.mapConfiguration.torpedoExplosionRadius, width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
-		drawImage.drawString("---------- SONAR ----------", width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
-		drawImage.drawString("sonarRange: " + session.gameInfo.mapConfiguration.sonarRange, width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
-		drawImage.drawString("extendedSonarRange: " + session.gameInfo.mapConfiguration.extendedSonarRange, width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
-		drawImage.drawString("extendedSonarRounds: " + session.gameInfo.mapConfiguration.extendedSonarRounds, width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
-		drawImage.drawString("extendedSonarCooldown: " + session.gameInfo.mapConfiguration.extendedSonarCooldown, width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
-		drawImage.drawString("----------------------------", width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
-		drawImage.drawString("- TOTAL THINK: ?", width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
-		drawImage.drawString("- TOTAL DRAW: " + (System.currentTimeMillis() - this.paintStartTime) + "ms", width - marginFromXEndInPixels, (fontHeightInPixel * ++i));
+		printLine("---------- TORPEDO --------");
+		printLine("torpedoDamage: " + session.gameInfo.mapConfiguration.torpedoDamage);
+		printLine("torpedoHitScore: " + session.gameInfo.mapConfiguration.torpedoHitScore);
+		printLine("torpedoHitPenalty: " + session.gameInfo.mapConfiguration.torpedoHitPenalty);
+		printLine("torpedoCooldown: " + session.gameInfo.mapConfiguration.torpedoCooldown);
+		printLine("torpedoSpeed: " + session.gameInfo.mapConfiguration.torpedoSpeed);
+		printLine("torpedoExplosionRadius: " + session.gameInfo.mapConfiguration.torpedoExplosionRadius);
+		printLine("---------- SONAR ----------");
+		printLine("sonarRange: " + session.gameInfo.mapConfiguration.sonarRange);
+		printLine("extendedSonarRange: " + session.gameInfo.mapConfiguration.extendedSonarRange);
+		printLine("extendedSonarRounds: " + session.gameInfo.mapConfiguration.extendedSonarRounds);
+		printLine("extendedSonarCooldown: " + session.gameInfo.mapConfiguration.extendedSonarCooldown);
+		printLine("----------------------------");
+		printLine("- TOTAL THINK: " + session.lastTurnLength + "ms");
+		printLine("- TOTAL DRAW: " + (System.currentTimeMillis() - this.paintStartTime) + "ms");
 	}
 
 	public void refresh(GameSession session) {
