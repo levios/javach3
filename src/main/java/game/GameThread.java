@@ -4,7 +4,8 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ui.MainPaint;
 import connection.Connection;
@@ -12,7 +13,7 @@ import connection.Connection;
 public class GameThread extends Thread {
 
 
-	static Logger log = Logger.getLogger(GameThread.class.getName());
+	static Logger log = LoggerFactory.getLogger(GameThread.class);
 
 	private Connection conn;
 
@@ -55,7 +56,7 @@ public class GameThread extends Thread {
 		} catch (RuntimeException e) {
 			e.printStackTrace();
 		} catch (Exception e) {
-			log.error(e);
+			log.error(e.getMessage(), e);
 			e.printStackTrace();
 		} finally {
 
@@ -78,7 +79,7 @@ public class GameThread extends Thread {
 		game.start();
 
 		log.debug(game.getStatusInfo());
-
+		
 		/************ FOCIKLUS ************/
 		while ((System.nanoTime() - startTime) < TEST_LENGTH_IN_NANOSEC) {
 

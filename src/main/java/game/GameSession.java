@@ -2,6 +2,7 @@ package game;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import strategy.Strategy;
 import ui.MainPaint;
 //import utils.Transformer;
 import connection.Connection;
@@ -24,7 +26,7 @@ import static model.ErrorCode.*;
 public class GameSession {
 	private static Logger log = LoggerFactory.getLogger(GameSession.class);
 
-	private Long gameId;
+	Long gameId;
 	private Connection connection;
 	private GameState state = GameState.UNINITIALIZED;
 
@@ -97,8 +99,9 @@ public class GameSession {
 			Submarine.setBounds(this.mapConfiguration);
 			Torpedo.setBounds(this.mapConfiguration);
 			// Submarines
-			this.map = new GameMap(gameInfo.mapConfiguration);
 			this.myShips = this.createShips(gameInfo.mapConfiguration);
+			//map
+			this.map = new GameMap(gameInfo.mapConfiguration, myShips.stream().map(ship -> ship.id).collect(Collectors.toList()));
 		}
 
 		this.connectionStatus = gameInfo.connectionStatus;
@@ -121,7 +124,8 @@ public class GameSession {
 	private List<Submarine> createShips(MapConfiguration mapConfiguration) {
 		List<model.Submarine> submarineModels = this.connection.submarine(this.gameId);
 		List<Submarine> submarines = submarineModels.stream().map(s ->
-				new Submarine(s.id, s.owner.name, s.position.x, s.position.y, s.velocity, s.angle))
+				new Submarine(s.id, s.owner.name, s.position.x, s.position.y, s.velocity, s.angle, mapConfiguration.width, mapConfiguration.height,
+						this, connection))
 				.collect(Collectors.toList());
 		submarines.forEach(s -> myShipMap.put(s.id, s));
 		return submarines;
@@ -195,23 +199,32 @@ public class GameSession {
 			return readings;
 		}).collect(Collectors.toList());
 
-		this.myShips.forEach(s -> {
-			this.connection.move(this.gameId, s.id, this.mapConfiguration.maxAccelerationPerRound, this.mapConfiguration.maxSteeringPerRound);
-		});
+//		this.myShips.forEach(s -> {
+//			this.connection.move(this.gameId, s.id, this.mapConfiguration.maxAccelerationPerRound, this.mapConfiguration.maxSteeringPerRound);
+//		});
 		
-		// shoot
-		Submarine first = this.myShips.get(0);
-		if(canShootTorpedo(first.id)){
-			//shoot with first
-			this.connection.shoot(this.gameId, first.id, 0.0);
-			torpedosShotInRounds.put(first.id, round);
-		}
-		Submarine second = this.myShips.get(1);
-		if(canShootTorpedo(second.id)){
-			//shoot with second
-			this.connection.shoot(this.gameId, second.id, 0.0);
-			torpedosShotInRounds.put(second.id, round);
-		}
+		//if(no enemy ships around)
+//		this.myShips.forEach(ship -> ship.setStrategy(Strategy.MOVEAROUND));
+		this.myShips.get(0).setStrategy(Strategy.MOVEAROUND);
+		//else
+		// attach enemy ship
+		
+//		this.myShips.forEach(ship -> ship.executeStrategy());
+		this.myShips.get(0).executeStrategy();
+		
+//		// shoot
+//		Submarine first = this.myShips.get(0);
+//		if(canShootTorpedo(first.id)){
+//			//shoot with first
+//			this.connection.shoot(this.gameId, first.id, 0.0);
+//			torpedosShotInRounds.put(first.id, round);
+//		}
+//		Submarine second = this.myShips.get(1);
+//		if(canShootTorpedo(second.id)){
+//			//shoot with second
+//			this.connection.shoot(this.gameId, second.id, 0.0);
+//			torpedosShotInRounds.put(second.id, round);
+//		}
 
 	}
 

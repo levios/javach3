@@ -8,6 +8,8 @@ import java.util.Objects;
 
 import javax.swing.JPanel;
 
+import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
+
 class PaintPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 
@@ -17,6 +19,8 @@ class PaintPanel extends JPanel {
 	private final Color SONAR_SEAWEED = new Color(65, 255, 70, 62);
 	private final Color GRASS_GREEN = new Color(143, 255, 40, 206);
 	private final Color FOS_LILA = new Color(153, 0, 153);
+	
+	private final Color ENEMY_SHIP = new Color(240, 217, 65);
 
 	private static volatile GameSession session = null;
 
@@ -102,6 +106,17 @@ class PaintPanel extends JPanel {
 				drawImage.translate(-ship.position.x, -(height - ship.position.y));
 			});
 			
+			//draw ship's next position
+			drawImage.setColor(Color.BLACK);
+			session.myShips
+					.stream()
+					.filter(ship -> !ship.nextPositions.isEmpty())
+					.forEach(
+							ship -> drawImage.drawLine((int) ship.position.x,
+									(int) (height-ship.position.y),
+									(int) ship.nextPositions.get(0).getX(),
+									(int) (height-ship.nextPositions.get(0).getY())));
+			
 			// Draw Torpedos 
 			session.map.torpedos.stream().forEach(torpedo -> {
 				double x = torpedo.position.x;
@@ -109,6 +124,22 @@ class PaintPanel extends JPanel {
 				drawImage.setColor(FOS_LILA);
 				drawImage.fillPolygon(new int[]{(int) x, (int) (x-10), (int)x-10}, 
 						new int[]{(int) (height -y), (int) (height - y-5), (int)(height - y + 5)}, 3);
+			});
+			
+			session.map.enemyShips.forEach(ship -> {
+				drawImage.translate(ship.position.x, height - ship.position.y);
+				drawImage.rotate(Math.toRadians(90 - ship.rotation));
+
+				drawImage.setColor(ENEMY_SHIP);
+				drawImage.fillOval(
+						(int) (-ship.r),
+						(int) (-ship.r),
+						(int) (ship.r * 2),
+						(int) (ship.r * 2));
+				drawImage.setColor(GRASS_GREEN);
+				drawImage.fillPolygon(makeTriangleX(ship.r), makeTriangleY(ship.r), 3);
+				drawImage.rotate(Math.toRadians(-(90 - ship.rotation)));
+				drawImage.translate(-ship.position.x, -(height - ship.position.y));
 			});
 
 //			// Draw enemy ships

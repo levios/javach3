@@ -23,9 +23,9 @@ public class Torpedo extends ProjectileLike {
 	}
 
 	public final String owner;
-	public final Integer id;
+	public final Long id;
 
-	public Torpedo(Integer id, String owner, double x, double y, double rotation) {
+	public Torpedo(Long id, String owner, double x, double y, double rotation) {
 		super(x, y, 0, TORPEDO_SPEED, rotation);
 		this.owner = owner;
 		this.id = id;

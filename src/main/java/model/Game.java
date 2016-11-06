@@ -10,7 +10,7 @@ public class Game {
 
 	@SerializedName("id")
 	@Expose
-	public Integer id;
+	public Long id;
 	@SerializedName("round")
 	@Expose
 	public Integer round;

@@ -13,7 +13,7 @@ public class Entity {
 	public String type;
 	@SerializedName("id")
 	@Expose
-	public Integer id;
+	public Long id;
 	@SerializedName("position")
 	@Expose
 	public Position position;
