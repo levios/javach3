@@ -149,25 +149,45 @@ public class Submarine extends PlayerObject {
 			 * */
 
 				if (!map.enemyShips.isEmpty()) {
+				
+				// TODO: a legmesszebbit kene ?
+				ProjectileLike enemy = session.map.enemyShips.get(0);
+Vector2D enemyShip = new Vector2D(map.enemyShips.get(0).x(), map.enemyShips.get(0).y());
 
-					// TODO: a legmesszebbit kene ?
-					Vector2D enemyShip = new Vector2D(map.enemyShips.get(0).x(), map.enemyShips.get(0).y());
+//current vector
+Vector2D currentVector = new Vector2D(this.position.getX(), this.position.getY());
 
-					//current vector
-					Vector2D currentVector = new Vector2D(this.position.getX(), this.position.getY());
+//target Vector
+Vector2D targetVector2 = enemyShip.subtract(currentVector);
+				
+				double distanceFromTarget = currentVector.distance(targetVector2);
+				int numberOfRoundsToReachTarget = (int) Math.ceil(distanceFromTarget/this.session.mapConfiguration.torpedoSpeed);
+				
+				
+				// find out where enemy ship will be in numberOfRoundsToReachTarget rounds
+				Vector v = Vector.unit(enemy.rotation);
+				v = v.scale(enemy.speed);
+				
+				//ha tul kozel van, mozogjon ellenkezo iranyba
+//				if(currentVector.distance(targetVector2) < session.mapConfiguration.torpedoExplosionRadius){
+//					conn.move(session.gameId, this.id, session.mapConfiguration.maxAccelerationPerRound, rotationDiff)
+//				}
+				
+				//hol lesz x kor mulva
+				for(int i=0; i<numberOfRoundsToReachTarget; i++){
+					targetVector2 = targetVector2.add(new Vector2D(v.x, v.y));
+				}
+				
+				double targetVectorAngle2 = getAngleOfVector(targetVector2);
+				if(targetVectorAngle2 < 0){
+					targetVectorAngle2 += 360;
+				}
+				log.info("Ship[{}]: TargetVectorAngle calculated: {}", this.id, targetVectorAngle2);
+				
+				if(canShootTorpedo()) {
+					this.actionQueue.add(Action.shoot(targetVectorAngle2));
+					torpedosShotInRound = map.mapConfig.round;
 
-					//target Vector
-					Vector2D targetVector2 = enemyShip.subtract(currentVector);
-
-					double targetVectorAngle2 = getAngleOfVector(targetVector2);
-					if (targetVectorAngle2 < 0) {
-						targetVectorAngle2 += 360;
-					}
-					log.info("Ship[{}]: TargetVectorAngle calculated: {}", this.id, targetVectorAngle2);
-
-					if (this.torpedoCooldown <= 0) {
-						this.actionQueue.add(Action.shoot(targetVectorAngle2));
-					}
 				}
 
 
