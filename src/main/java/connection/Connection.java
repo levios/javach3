@@ -27,7 +27,6 @@ import static model.ErrorCode.*;
 public class Connection {
 	private static Logger log = LoggerFactory.getLogger(Connection.class);
 
-	private static Connection connectToUrlUsingBasicAuthentication;
 	private static final String USER_AGENT = "Mozilla/5.0";
 	private static final String URL_TO_READ_DBG = "http://localhost:3000";
 	private static final String DISPLAY_SERVER_URL = "http://javach-delanni.c9users.io/";
@@ -41,6 +40,7 @@ public class Connection {
 
 	private String serverUrl;
 
+	//private static Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static Gson GSON = new GsonBuilder().create();
 
 	public Connection(String server) {
@@ -208,7 +208,7 @@ public class Connection {
 	 * POST http://server-adress:port/jc16-srv/game/{gameId}
 	 * 1 - Nincs a csapat meghívva
 	 * 2 - Folyamatban lévõ játék
-	 * 3 - Nem létezõ gameId
+	 * 3 - Nem letezo gameId
 	 */
 	public ErrorCode joinGame(Long gameId) {
 		String Url = "game/" + gameId;
@@ -257,14 +257,14 @@ public class Connection {
 	}
 
 	/**
-	 * POST
+	 * <pre>POST
 	 * http://server-adress:port/jc16-srv/game/{gameId}/submarine/{submarineId}/move
-	 * 3 - Nem létező gameId
-	 * 4 - Nincs a csapatnak jogosultsága a megadott tengeralattjárót kezelni
-	 * 9 - A játék nincs folyamatban
-	 * 10 - A megadott hajó már mozgott ebben a körben
+	 * 3 - Nem letezo gameId
+	 * 4 - Nincs a csapatnak jogosultsaga a megadott tengeralattjarot kezelni
+	 * 9 - A jatek nincs folyamatban
+	 * 10 - A megadott hajo mar mozgott ebben a korben
 	 * 11 - Tul nagy gyorsulas
-	 * 12 - Tul nagy kanyarodas
+	 * 12 - Tul nagy kanyarodas</pre>
 	 */
 	public ErrorCode move(Long gameId, Long submarineId, double speedDiff, double rotationDiff) {
 		MoveRequest request = new MoveRequest();
@@ -279,13 +279,15 @@ public class Connection {
 	}
 
 	/**
-	 * POST
+	 * <pre>POST
 	 * http://server-adress:port/jc16-srv/game/{gameId}/submarine/{submarineId}/shoot
-	 * 3 - Nem létezõ gameId
-	 * 4 - Nincs a csapatnak jogosultsága a megadott tengeralattjárót kezelni
-	 * 7 - A torpedó cooldownon van
+	 * 3 - Nem letezo gameId
+	 * 4 - Nincs a csapatnak jogosultsaga a megadott tengeralattjarot kezelni
+	 * 7 - A torpedo cooldownon van</pre>
 	 */
-	public ErrorCode shoot(Integer gameId, Integer submarineId, ShootRequest request) {
+	public ErrorCode shoot(Long gameId, Long submarineId, double angle) {
+		ShootRequest request = new ShootRequest();
+		request.angle = angle;
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/shoot";
 		String requestJson = GSON.toJson(request);
 		String jSONObjectAsString = sendPost("shoot", Url, requestJson);
@@ -317,10 +319,10 @@ public class Connection {
 	 * POST
 	 * http://server-adress:port/jc16-srv/game/{gameId}/submarine/{submarineId}/sonar
 	 * 3 - Nem letezo gameId
-	 * 4 - Nincs a csapatnak jogosultsága a megadott tengeralattjárót kezelni
+	 * 4 - Nincs a csapatnak jogosultsaga a megadott tengeralattjarot kezelni
 	 * 8 - Ujratoltodes elotti hivas
 	 */
-	public ErrorCode extendSonar(Integer gameId, Integer submarineId) {
+	public ErrorCode extendSonar(Long gameId, Long submarineId) {
 		String Url = "game/" + gameId + "/submarine/" + submarineId + "/sonar";
 		String jSONObjectAsString = sendPost("extendSonar", Url, null);
 		MessageWithCodeResponse sonarActivationResult = GSON.fromJson(jSONObjectAsString,

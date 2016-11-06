@@ -58,10 +58,4 @@ public class Submarine extends ProjectileLike {
 		this.updatePosition(x, y, angle, speed);
 	}
 
-	public void updatePosition(double x, double y, double angle, double speed) {
-		this.rotation = angle;
-		this.speed = speed;
-		this.position.x = x;
-		this.position.y = y;
-	}
 }
