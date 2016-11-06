@@ -101,7 +101,7 @@ public class Submarine extends ProjectileLike {
 			Vector2D nextTargetPosition = nextPositions.get(0);
 			
 			// if I'm close enough, pop the Position out of the List AND add it to the end
-			if(current.distance(nextTargetPosition) < 10.0){
+			if(current.distance(nextTargetPosition) < 100.0){
 				nextPositions.remove(0);
 				nextPositions.add(nextTargetPosition);
 				nextTargetPosition = nextPositions.get(1);
@@ -117,11 +117,21 @@ public class Submarine extends ProjectileLike {
 			
 			//calc wood-be-perfect angle
 			double angleBetweenTwoVectors = targetVectorAngle - angle;
-			if(angleBetweenTwoVectors < 0.0) 
+			if (angleBetweenTwoVectors < -180.0) {
 				angleBetweenTwoVectors += 360;
+			} else if (angleBetweenTwoVectors > 180.0) {
+				angleBetweenTwoVectors -= 360;
+			}
+			log.info("AngleBetweenTwoVectors calculated: {}", angleBetweenTwoVectors);
 			
 			//calc turn
-			double turn = Math.min(angleBetweenTwoVectors, session.mapConfiguration.maxSteeringPerRound); 
+			double turn = angleBetweenTwoVectors;
+			if(angleBetweenTwoVectors > session.mapConfiguration.maxSteeringPerRound){
+				turn = session.mapConfiguration.maxSteeringPerRound;
+			}
+			if(angleBetweenTwoVectors < -session.mapConfiguration.maxSteeringPerRound){
+				turn = -session.mapConfiguration.maxSteeringPerRound;
+			}
 			log.info("Turn calculated: {}", turn);
 			//  calculate speed - TODO
 			
@@ -141,6 +151,21 @@ public class Submarine extends ProjectileLike {
 			conn.move(session.gameId, this.id, acceleration, turn);
 			
 			break; 
+			
+		case CAMP: // a.k.a. kempele's
+			/* 
+			 * Ez arrol szol, hogy jon az ellen, mi meg szejjel lojjuk
+			 * */
+			
+//			if(!session.map.enemyShips.isEmpty()){
+//				
+//				//shoot 'em
+//				conn.shoot(session.gameId, this.id, angleBetweenTwoVectors);
+//				
+//			}
+			
+			
+			break;
 		}
 	}
 

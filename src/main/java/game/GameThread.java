@@ -80,14 +80,11 @@ public class GameThread extends Thread {
 
 		log.debug(game.getStatusInfo());
 		
-//		Thread.sleep(5000);
-
 		/************ FOCIKLUS ************/
 		while ((System.nanoTime() - startTime) < TEST_LENGTH_IN_NANOSEC) {
 
 			game.updateGameInfo();
 			game.updateShipStatus();
-			Thread.sleep(2000);
 			game.executeStrategy();
 			
 			Thread.sleep(game.mapConfiguration.roundLength);

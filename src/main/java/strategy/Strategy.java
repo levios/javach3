@@ -2,7 +2,10 @@ package strategy;
 
 public enum Strategy {
 
-	MOVEAROUND;
+	MOVEAROUND, 
+	
+	
+	CAMP;
 	
 	
 	
