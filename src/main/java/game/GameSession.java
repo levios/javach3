@@ -38,7 +38,6 @@ public class GameSession {
 	public GameMap map;
 	public List<Submarine> myShips;
 	private Map<Long, Submarine> myShipMap;
-	private Map<Long, Integer> torpedosShotInRounds = new HashMap<>();
 
 	private final boolean gui;
 	private MainPaint GUI = null;
@@ -206,31 +205,15 @@ public class GameSession {
 		//if(no enemy ships around)
 //		this.myShips.forEach(ship -> ship.setStrategy(Strategy.MOVEAROUND));
 		this.myShips.get(0).setStrategy(Strategy.MOVEAROUND);
+		this.myShips.get(1).setStrategy(Strategy.CAMP);
 		//else
 		// attach enemy ship
 		
 //		this.myShips.forEach(ship -> ship.executeStrategy());
 		this.myShips.get(0).executeStrategy();
+		this.myShips.get(1).executeStrategy();
 		
-//		// shoot
-//		Submarine first = this.myShips.get(0);
-//		if(canShootTorpedo(first.id)){
-//			//shoot with first
-//			this.connection.shoot(this.gameId, first.id, 0.0);
-//			torpedosShotInRounds.put(first.id, round);
-//		}
-//		Submarine second = this.myShips.get(1);
-//		if(canShootTorpedo(second.id)){
-//			//shoot with second
-//			this.connection.shoot(this.gameId, second.id, 0.0);
-//			torpedosShotInRounds.put(second.id, round);
 //		}
 
-	}
-
-	private boolean canShootTorpedo(Long submarineId) {
-		if(torpedosShotInRounds.get(submarineId) == null) return true;
-		if(this.round - torpedosShotInRounds.get(submarineId) >= this.mapConfiguration.torpedoCooldown) return true;
-		return false;
 	}
 }
