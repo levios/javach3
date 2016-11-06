@@ -1,8 +1,6 @@
 package main;
 
-import game.GameSession;
-import game.GameThread;
-import game.LeviGameThread;
+import game.*;
 
 import java.awt.EventQueue;
 
