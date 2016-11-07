@@ -7,10 +7,10 @@ import model.MapConfiguration;
  */
 public class Torpedo extends PlayerObject {
 
-	private static Integer TORPEDO_DAMAGE;
-	private static Integer TORPEDO_EXPLOSION;
-	private static Integer TORPEDO_RANGE;
-	private static Integer TORPEDO_SPEED;
+	public static Integer TORPEDO_DAMAGE;
+	public static Integer TORPEDO_EXPLOSION;
+	public static Integer TORPEDO_RANGE;
+	public static Integer TORPEDO_SPEED;
 	private final Integer explosionRange;
 	private final Integer explosionDamage;
 	private final double life;

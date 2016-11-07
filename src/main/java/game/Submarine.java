@@ -20,15 +20,14 @@ public class Submarine extends PlayerObject {
 
 	private static double SHOOT_PREDICTION_EPSILON;
 	private static int MAX_SHOOT_STEPS_PREDICT;
-	private static Integer TORPEDO_SPEED;
-	private static Integer SONAR_COOLDOWN;
+	//	private static Integer SONAR_COOLDOWN;
 	// private static Integer SONAR_RANGE;
-	private static Integer SONAR_DURATION;
-	private static Integer MAX_ACCELERATION;
-	private static Integer MAX_STEERING;
-	private static Integer MAX_SPEED;
-	private static int TORPEDO_COOLDOWN;
-	private static Integer SUBMARINE_RADIUS;
+//	private static Integer SONAR_DURATION;
+	public static Integer MAX_ACCELERATION;
+	public static Integer MAX_STEERING;
+	public static Integer MAX_SPEED;
+	public static int TORPEDO_COOLDOWN;
+	public static Integer SUBMARINE_RADIUS;
 
 	static Logger log = LoggerFactory.getLogger(Submarine.class);
 	private final GameMap map;
@@ -49,16 +48,15 @@ public class Submarine extends PlayerObject {
 	public List<XVector> futureTorpedoPositions = new ArrayList<>();
 
 	public static void setBounds(MapConfiguration rules) {
-		SONAR_COOLDOWN = rules.extendedSonarCooldown;
-		// SONAR_RANGE = rules.extendedSonarRange;
-		SONAR_DURATION = rules.extendedSonarRounds;
+//		SONAR_COOLDOWN = rules.extendedSonarCooldown;
+//		SONAR_RANGE = rules.extendedSonarRange;
+//		SONAR_DURATION = rules.extendedSonarRounds;
 
 		MAX_ACCELERATION = rules.maxAccelerationPerRound;
 		MAX_STEERING = rules.maxSteeringPerRound;
 		MAX_SPEED = rules.maxSpeed;
 
 		TORPEDO_COOLDOWN = rules.torpedoCooldown;
-		TORPEDO_SPEED = rules.torpedoSpeed;
 		SUBMARINE_RADIUS = rules.submarineSize;
 
 
@@ -125,7 +123,7 @@ public class Submarine extends PlayerObject {
 				if (!this.map.enemyShips.isEmpty()) {
 					PlayerObject enemyShip = this.map.enemyShips.get(0);
 					boolean willLikelyHit = this.shootAtTarget(enemyShip);
-					if (!willLikelyHit && this.map.enemyShips.size() >= 2 ){
+					if (!willLikelyHit && this.map.enemyShips.size() >= 2) {
 						PlayerObject otherShip = this.map.enemyShips.get(1);
 						boolean willProablyHitTheOtherOne = this.shootAtTarget(otherShip);
 					}
@@ -184,7 +182,7 @@ public class Submarine extends PlayerObject {
 			// TODO: ugy nez ki meg talan 1 korrel kesobb kezd loni mint ahogy lohetne - REVISE this part
 			target.step();
 			double distance = this.position.distance(target.position);
-			double distanceInSteps = distance / TORPEDO_SPEED;
+			double distanceInSteps = distance / Torpedo.TORPEDO_SPEED;
 			double error = distanceInSteps - i;
 
 			if (Math.abs(error) < SHOOT_PREDICTION_EPSILON) {
@@ -194,7 +192,7 @@ public class Submarine extends PlayerObject {
 				Torpedo torpedo = new Torpedo(-1L, this.owner, this.x(), this.y(), angle);
 				//torpedo.step(i);
 				this.futureTorpedoPositions.clear();
-				for (int j=0;j<i;j++){
+				for (int j = 0; j < i; j++) {
 					torpedo.step();
 					this.futureTorpedoPositions.add(torpedo.position);
 				}
