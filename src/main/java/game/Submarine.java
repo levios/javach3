@@ -29,7 +29,7 @@ public class Submarine extends PlayerObject {
 	public static Integer MAX_SPEED;
 	public static int TORPEDO_COOLDOWN;
 	public static Integer SUBMARINE_RADIUS;
-
+	public static int TORPEDO_RANGE;
 	static Logger log = LoggerFactory.getLogger(Submarine.class);
 	private final GameMap map;
 
@@ -56,7 +56,7 @@ public class Submarine extends PlayerObject {
 		MAX_ACCELERATION = rules.maxAccelerationPerRound;
 		MAX_STEERING = rules.maxSteeringPerRound;
 		MAX_SPEED = rules.maxSpeed;
-
+		TORPEDO_RANGE = rules.torpedoRange;
 		TORPEDO_COOLDOWN = rules.torpedoCooldown;
 		SUBMARINE_RADIUS = rules.submarineSize;
 
@@ -85,6 +85,93 @@ public class Submarine extends PlayerObject {
 		GameThread.log.info("Prediction error is " + predictionError);
 
 		this.updatePosition(x, y, angle, speed);
+	}
+	
+	public int getNumberOfRoundsToReachTarget(double distanceFromTarget){
+		return (int) Math.ceil(distanceFromTarget / this.map.mapConfig.torpedoSpeed);
+	}
+	
+	public boolean isTargetWithinTorpedoRange(int numberOfRoundsToReachTarget){
+		if(numberOfRoundsToReachTarget > this.TORPEDO_RANGE) return false;
+		return true;
+	}
+
+	
+	public double whatAngleToShootMovingTarget(ProjectileLike enemy){
+		XVector enemyShipVector = new XVector(enemy.x(), enemy.y());
+
+		// current vector
+		XVector currentVector = new XVector(this.position.getX(), this.position.getY());
+
+		// target Vector
+		XVector targetVector = XVector.subtract(enemyShipVector, currentVector);
+
+		double distanceFromTarget = currentVector.distance(targetVector);
+		int numberOfRoundsToReachTarget = getNumberOfRoundsToReachTarget(distanceFromTarget);
+
+		// find out where enemy ship will be in numberOfRoundsToReachTarget rounds
+		targetVector = calculateVectorToShoot(enemy, targetVector, numberOfRoundsToReachTarget);
+
+		double targetVectorAngle2 = targetVector.getAngleInDegrees();
+		if (targetVectorAngle2 < 0) {
+			targetVectorAngle2 += 360;
+		}
+		log.info("Ship[{}]: TargetVectorAngle calculated: {}", this.id, targetVectorAngle2);
+
+		return targetVectorAngle2;
+	}
+
+	
+	/**
+	 * translates targetvector
+	 * @targetVector - vector from current position to enemy
+	 */
+	private XVector calculateVectorToShoot(ProjectileLike enemy, XVector targetVector, int numberOfRoundsToReachTarget) {
+		XVector v = XVector.unit(enemy.rotation).scale(enemy.speed);
+
+		// // ha tul kozel van, mozogjon ellenkezo iranyba
+		// if(currentVector.distance(targetVector2) <
+		// map.mapConfig.torpedoExplosionRadius){
+		// this.actionQueue.add(Action.move(rotationDiff,
+		// map.mapConfig.maxAccelerationPerRound));
+		// // conn.move(session.gameId, this.id,
+		// session.mapConfiguration.maxAccelerationPerRound,
+		// rotationDiff);
+		// }
+
+		// hol lesz x kor mulva
+		for (int i = 0; i < numberOfRoundsToReachTarget; i++) {
+			targetVector = targetVector.add(new XVector(v.x, v.y));
+		}
+		return targetVector;
+	}
+	
+	public boolean wouldTorpedoReachTarget(ProjectileLike enemy){
+		XVector enemyShipVector = new XVector(enemy.x(), enemy.y());
+
+		// current vector
+		XVector currentVector = new XVector(this.position.getX(), this.position.getY());
+
+		// target Vector
+		XVector targetVector2 = XVector.subtract(enemyShipVector, currentVector);
+
+		double distanceFromTarget = targetVector2.getMagnitude();
+		int numberOfRoundsToReachTarget = getNumberOfRoundsToReachTarget(distanceFromTarget);
+		return isTargetWithinTorpedoRange(numberOfRoundsToReachTarget);
+	}
+	
+	public boolean wouldIKillMyself(ProjectileLike enemy){
+		XVector enemyShipVector = new XVector(enemy.x(), enemy.y());
+
+		// current vector
+		XVector currentVector = new XVector(this.position.getX(), this.position.getY());
+
+		// target Vector
+		XVector targetVector2 = XVector.subtract(enemyShipVector, currentVector);
+
+		double distanceFromTarget = currentVector.distance(targetVector2);
+		int numberOfRoundsToReachTarget = getNumberOfRoundsToReachTarget(distanceFromTarget);
+		return isTargetWithinTorpedoRange(numberOfRoundsToReachTarget);
 	}
 
 	/**
@@ -141,6 +228,31 @@ public class Submarine extends PlayerObject {
 				}
 
 				break;
+//			if (!map.enemyShips.isEmpty()) {
+//				
+//				if (wouldTorpedoReachTarget(map.enemyShips.get(0))) {
+//
+//					// TODO: a legmesszebbit kene ?
+//
+//					ProjectileLike enemy = map.enemyShips.get(0);
+//					double targetVectorAngle2 = whatAngleToShootMovingTarget(enemy);
+//
+//					// if (this.torpedoCooldown <= 0) {
+//					// this.actionQueue.add(Action.shoot(targetVectorAngle2));
+//					// }
+//					if (canShootTorpedo()) {
+//						// conn.shoot(map.gameId, this.id, targetVectorAngle2);
+//						this.actionQueue.add(Action.shoot(targetVectorAngle2));
+//						this.torpedosShotInRound = this.currentRoundNum;
+//						log.info("torpedosShotInRound={}", torpedosShotInRound);
+//					}
+//				}
+//				else {
+//					// TODO: chase enemy ship
+//				}
+//			}
+//
+//			break;
 		}
 	}
 
