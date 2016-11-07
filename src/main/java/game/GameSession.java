@@ -244,4 +244,8 @@ public class GameSession {
 //		}
 
 	}
+	
+	public void updateRounds(){
+		this.myShips.forEach(s -> s.updateRounds());
+	}
 }
