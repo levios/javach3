@@ -89,6 +89,7 @@ public class GameThread extends Thread {
 			game.updateGameInfo();
 			game.updateShipStatus();
 			game.executeStrategy();
+			game.updateRounds();
 			game.lastTurnLength = currentTimeMillis() - timeBefore;
 			
 			Thread.sleep(game.mapConfiguration.roundLength - game.lastTurnLength);

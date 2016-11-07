@@ -1,13 +1,11 @@
 package game;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import com.sun.javafx.util.Utils;
+import model.MapConfiguration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,13 +13,7 @@ import org.slf4j.LoggerFactory;
 import strategy.Captain;
 import strategy.Strategy;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
-
-import connection.Connection;
-import model.MapConfiguration;
-import model.Owner;
-import model.Position;
+import com.sun.javafx.util.Utils;
 
 public class Submarine extends PlayerObject {
 
@@ -42,7 +34,12 @@ public class Submarine extends PlayerObject {
 	//	private boolean torpedosShotInRound;
 	public List<XVector> nextPositions = new ArrayList<>();
 	private Strategy myStrategy;
-	private int torpedosShotInRound;
+	
+	// mikor lottunk utoljara
+	private int torpedosShotInRound = -1;
+	
+	// hanyadik korben vagyunk
+	private int currentRoundNum = 0;
 	
 	public static void setBounds(MapConfiguration rules) {
 		SONAR_COOLDOWN = rules.extendedSonarCooldown;
@@ -84,7 +81,7 @@ public class Submarine extends PlayerObject {
 	 * executes current strategy
 	 */
 	public void executeStrategy() {
-		this.torpedoCooldown = Math.max(0, this.torpedoCooldown - 1);
+//		this.torpedoCooldown = Math.max(0, this.torpedoCooldown - 1);
 		this.sonarCooldown = Math.max(0, this.sonarCooldown - 1);
 
 		log.info("Torpedo cooldown: [{}: {}] ", this.id, this.torpedoCooldown);
@@ -161,13 +158,13 @@ public class Submarine extends PlayerObject {
 				// TODO: a legmesszebbit kene ?
 
 				ProjectileLike enemy = map.enemyShips.get(0);
-				XVector enemyShip = new XVector(enemy.x(), enemy.y());
+				XVector enemyShipVector = new XVector(enemy.x(), enemy.y());
 
 				// current vector
 				XVector currentVector = new XVector(this.position.getX(), this.position.getY());
 
 				// target Vector
-				XVector targetVector2 = XVector.subtract(enemyShip, currentVector);
+				XVector targetVector2 = XVector.subtract(enemyShipVector, currentVector);
 
 				double distanceFromTarget = currentVector.distance(targetVector2);
 				int numberOfRoundsToReachTarget = (int) Math.ceil(distanceFromTarget / this.map.mapConfig.torpedoSpeed);
@@ -204,13 +201,17 @@ public class Submarine extends PlayerObject {
 				if (canShootTorpedo()) {
 					// conn.shoot(map.gameId, this.id, targetVectorAngle2);
 					this.actionQueue.add(Action.shoot(targetVectorAngle2));
-					torpedosShotInRound = this.map.mapConfig.rounds;
-
+					this.torpedosShotInRound = this.currentRoundNum;
+					log.info("torpedosShotInRound={}", torpedosShotInRound);
 				}
 			}
 
 			break;
 		}
+	}
+	
+	public void updateRounds(){
+		this.currentRoundNum++;
 	}
 
 	public void setStrategy(Strategy strategy) {
@@ -219,8 +220,8 @@ public class Submarine extends PlayerObject {
 	
 
 	 private boolean canShootTorpedo() {
-	 		if(torpedosShotInRound < 0) return true;
-	 		if(map.mapConfig.rounds - torpedosShotInRound >= map.mapConfig.torpedoCooldown) return true;
+	 		if(this.torpedosShotInRound < 0) return true;
+	 		if(this.currentRoundNum - torpedosShotInRound >= this.TORPEDO_COOLDOWN) return true;
 	 		return false;
 	 	}
 
@@ -232,8 +233,8 @@ public class Submarine extends PlayerObject {
 			this.step();
 		} else if (a instanceof Action.ShootAction) {
 //			Action.ShootAction sa = (Action.ShootAction) a;
-			this.torpedoCooldown = TORPEDO_COOLDOWN +1;
-			log.info("Shoot successful for {}, updating cooldown to: {}", this.id, TORPEDO_COOLDOWN);
+//			this.torpedoCooldown = TORPEDO_COOLDOWN +1;
+//			log.info("Shoot successful for {}, updating cooldown to: {}", this.id, TORPEDO_COOLDOWN);
 		}
 	}
 
