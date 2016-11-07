@@ -1,9 +1,7 @@
 package game;
 
-import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
-
 public class Circular {
-	public Vector2D position;
+	public XVector position;
 	public double r;
 
 	/**
@@ -51,19 +49,19 @@ public class Circular {
 	 * @param Y target Y coordinate
 	 */
 	public void moveTo(double X, double Y) {
-		this.position = new Vector2D(X,Y);
+		this.position = new XVector(X,Y);
 	}
 
 	/**
 	 *
 	 * @param delta
 	 */
-	public void move(Vector2D delta) {
+	public void move(XVector delta) {
 		this.position = this.position.add(delta);
 	}
 
 	public Circular(double x, double y, double r) {
-		this.position = new Vector2D(x, y);
+		this.position = new XVector(x, y);
 		this.r = r;
 	}
 }

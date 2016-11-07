@@ -9,12 +9,13 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import strategy.Captain;
+import strategy.LeviCaptain;
 import strategy.Strategy;
 import ui.MainPaint;
 import connection.Connection;
 import main.Main;
 import model.*;
-
 import static model.ErrorCode.*;
 
 public class GameSession {
@@ -36,6 +37,7 @@ public class GameSession {
 	private final boolean gui;
 	private MainPaint GUI = null;
 	public long lastTurnLength;
+	private Captain captain;
 
 	public GameSession(Connection connection, boolean gui) {
 		this.connection = connection;
@@ -92,7 +94,9 @@ public class GameSession {
 		if (full) {
 			//map
 			this.map = new GameMap(gameInfo.mapConfiguration);
-
+			if(captain == null){
+				captain = new LeviCaptain(this.map);
+			}
 			Submarine.setBounds(this.mapConfiguration);
 			Torpedo.setBounds(this.mapConfiguration);
 			// Submarines
@@ -119,7 +123,8 @@ public class GameSession {
 	private List<Submarine> createShips() {
 		List<model.Submarine> submarineModels = this.connection.submarine(this.gameId);
 		List<Submarine> submarines = submarineModels.stream().map(s ->
-				new Submarine(s.id, s.owner.name, s.position.x, s.position.y, s.velocity, s.angle, this.map))
+				new Submarine(s.id, s.owner.name, s.position.x, s.position.y, s.velocity, s.angle, 
+						this.map, new LeviCaptain(this.map)))
 				.collect(Collectors.toList());
 		submarines.forEach(s -> myShipMap.put(s.id, s));
 		return submarines;
@@ -203,10 +208,11 @@ public class GameSession {
 		this.myShips.get(1).setStrategy(Strategy.CAMP);
 		//else
 		// attach enemy ship
+		
+		// ha vmelyik meghalt, szedjuk ki
+		this.myShips.removeIf(ship -> ship.hp == 0);
 
-//		this.myShips.forEach(ship -> ship.executeStrategy());
-		this.myShips.get(0).executeStrategy();
-		this.myShips.get(1).executeStrategy();
+		this.myShips.stream().forEach(ship -> ship.executeStrategy());
 
 		this.myShips.forEach(s -> {
 			boolean alreadyShot = false;

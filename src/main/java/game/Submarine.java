@@ -8,10 +8,11 @@ import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import com.sun.javafx.util.Utils;
-import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import strategy.Captain;
 import strategy.Strategy;
 
 import com.google.gson.annotations.Expose;
@@ -39,9 +40,10 @@ public class Submarine extends PlayerObject {
 	public Queue<Action> actionQueue = new LinkedBlockingQueue<>();
 
 	//	private boolean torpedosShotInRound;
-	public List<Vector2D> nextPositions = new ArrayList<>();
+	public List<XVector> nextPositions = new ArrayList<>();
 	private Strategy myStrategy;
-
+	private int torpedosShotInRound;
+	
 	public static void setBounds(MapConfiguration rules) {
 		SONAR_COOLDOWN = rules.extendedSonarCooldown;
 		// SONAR_RANGE = rules.extendedSonarRange;
@@ -60,11 +62,13 @@ public class Submarine extends PlayerObject {
 	public int sonarCooldown = 0;
 	public int sonarDuration = 0;
 	public int torpedoCooldown = 0;
-
-	public Submarine(long id, String owner, double x, double y, double speed, double rotation, GameMap map) {
+	private final Captain captain;
+	public Submarine(long id, String owner, double x, double y, double speed, double rotation, GameMap map,
+			Captain captain) {
 		super(id, owner, PlayerObjectType.SUBMARINE, x, y, SUBMARINE_RADIUS, speed, rotation);
 		this.map = map;
 		this.hp = 100;
+		this.captain = captain;
 	}
 
 	public void validatePosition(double x, double y, double angle, double speed) {
@@ -80,128 +84,145 @@ public class Submarine extends PlayerObject {
 	 * executes current strategy
 	 */
 	public void executeStrategy() {
-		this.torpedoCooldown = Math.max(0, this.torpedoCooldown-1);
-		this.sonarCooldown = Math.max(0, this.sonarCooldown-1);
+		this.torpedoCooldown = Math.max(0, this.torpedoCooldown - 1);
+		this.sonarCooldown = Math.max(0, this.sonarCooldown - 1);
 
 		log.info("Torpedo cooldown: [{}: {}] ", this.id, this.torpedoCooldown);
 
 		switch (this.myStrategy) {
 
-			case MOVEAROUND:
-				// get current coordinate
-				Vector2D current = this.position;
-				// get next coordinate I want to go
-				if (nextPositions.isEmpty()) {
-					// this will fill the nextPositions
-					planNextMoves();
-				}
-				Vector2D nextTargetPosition = nextPositions.get(0);
+		case MOVEAROUND:
+			// get current coordinate
+			XVector current = this.position;
+			// get next coordinate I want to go
+			if (nextPositions.isEmpty()) {
+				// this will fill the nextPositions
+				nextPositions = captain.planNextMoves(this);
+			}
+			XVector nextTargetPosition = nextPositions.get(0);
+			log.info("Ship[{}]: NextTargetPosition calculated: {}", this.id, nextTargetPosition.getAngleInDegrees());
 
-				// if I'm close enough, pop the Position out of the List AND add it to the end
-				if (current.distance(nextTargetPosition) < 100.0) {
-					nextPositions.remove(0);
-					nextPositions.add(nextTargetPosition);
-					nextTargetPosition = nextPositions.get(1);
-				}
+			// if I'm close enough, pop the Position out of the List AND add it
+			// to the end
+			if (current.distance(nextTargetPosition) < 100.0) {
+				nextPositions.remove(0);
+				nextPositions.add(nextTargetPosition);
+				nextTargetPosition = nextPositions.get(1);
+			}
 
-				//calculate iranyvektor
-				Vector2D targetVector = nextTargetPosition.subtract(current);
+			// calculate iranyvektor
+			XVector targetVector = XVector.subtract(nextTargetPosition, current);
 
-				// calculate angle of target vector
-				double targetVectorAngle = getAngleOfVector(targetVector);
-				log.info("TargetVectorAngle calculated: {}", targetVectorAngle);
+			// calculate angle of target vector
+			double targetVectorAngle = targetVector.getAngleInDegrees();
+			log.info("Ship[{}]: TargetVectorAngle calculated: {}", this.id, targetVectorAngle);
 
-				//current angle is in "angle"
-				log.info("Current angle: {}", this.rotation);
+			// current angle is in "angle"
+			log.info("Ship[{}]: Current angle: {}", this.id, this.rotation);
 
-				//calc wood-be-perfect angle
-				double angleBetweenTwoVectors = targetVectorAngle - this.rotation;
-				if (angleBetweenTwoVectors < -180.0) {
-					angleBetweenTwoVectors += 360;
-				} else if (angleBetweenTwoVectors > 180.0) {
-					angleBetweenTwoVectors -= 360;
-				}
-				log.info("AngleBetweenTwoVectors calculated: {}", angleBetweenTwoVectors);
+			// calc wood-be-perfect angle
+			double angleBetweenTwoVectors = targetVectorAngle - this.rotation;
+			if (angleBetweenTwoVectors < -180.0) {
+				angleBetweenTwoVectors += 360;
+			} else if (angleBetweenTwoVectors > 180.0) {
+				angleBetweenTwoVectors -= 360;
+			}
+			log.info("AngleBetweenTwoVectors calculated: {}", angleBetweenTwoVectors);
 
-				//calc turn
-				double turn = Utils.clamp(-MAX_STEERING, angleBetweenTwoVectors, MAX_STEERING);
+			// calc turn
+			double turn = Utils.clamp(-MAX_STEERING, angleBetweenTwoVectors, MAX_STEERING);
 
-				log.info("Turn calculated: {}", turn);
-				//  calculate speed - TODO
+			log.info("Ship[{}]: Turn calculated: {}", this.id, turn);
+			// calculate speed - TODO
 
-				// validate that I wont crash into island or "palya szele" - TODO
+			// validate that I wont crash into island or "palya szele" - TODO
 
-				// go
-				double acceleration;
-				if (this.speed >= MAX_SPEED) acceleration = 0;
-				else acceleration = Utils.clamp(0, MAX_SPEED - this.speed, MAX_ACCELERATION);
+			// go
+			double acceleration;
+			if (this.speed >= MAX_SPEED)
+				acceleration = 0;
+			else
+				acceleration = Utils.clamp(0, MAX_SPEED - this.speed, MAX_ACCELERATION);
 
-				log.info("Acceleration calculated: {}", acceleration);
+			log.info("Ship[{}]: Acceleration calculated: {}", this.id, acceleration);
 
-//				conn.move(session.gameId, this.id, acceleration, turn);
-				this.actionQueue.add(Action.move(turn, acceleration));
+			// conn.move(session.gameId, this.id, acceleration, turn);
+			this.actionQueue.add(Action.move(turn, acceleration));
 
-				break;
+			break;
 
-			case CAMP: // a.k.a. kempele's
-			/* 
+		case CAMP: // a.k.a. kempele's
+			/*
 			 * Ez arrol szol, hogy jon az ellen, mi meg szejjel lojjuk
-			 * */
+			 */
 
-				if (!map.enemyShips.isEmpty()) {
+			if (!map.enemyShips.isEmpty()) {
 
-					// TODO: a legmesszebbit kene ?
-					Vector2D enemyShip = new Vector2D(map.enemyShips.get(0).x(), map.enemyShips.get(0).y());
+				// TODO: a legmesszebbit kene ?
 
-					//current vector
-					Vector2D currentVector = new Vector2D(this.position.getX(), this.position.getY());
+				ProjectileLike enemy = map.enemyShips.get(0);
+				XVector enemyShip = new XVector(enemy.x(), enemy.y());
 
-					//target Vector
-					Vector2D targetVector2 = enemyShip.subtract(currentVector);
+				// current vector
+				XVector currentVector = new XVector(this.position.getX(), this.position.getY());
 
-					double targetVectorAngle2 = getAngleOfVector(targetVector2);
-					if (targetVectorAngle2 < 0) {
-						targetVectorAngle2 += 360;
-					}
-					log.info("Ship[{}]: TargetVectorAngle calculated: {}", this.id, targetVectorAngle2);
+				// target Vector
+				XVector targetVector2 = XVector.subtract(enemyShip, currentVector);
 
-					if (this.torpedoCooldown <= 0) {
-						this.actionQueue.add(Action.shoot(targetVectorAngle2));
-					}
+				double distanceFromTarget = currentVector.distance(targetVector2);
+				int numberOfRoundsToReachTarget = (int) Math.ceil(distanceFromTarget / this.map.mapConfig.torpedoSpeed);
+
+				// find out where enemy ship will be in
+				// numberOfRoundsToReachTarget rounds
+				XVector v = XVector.unit(enemy.rotation);
+				v = v.scale(enemy.speed);
+
+				// // ha tul kozel van, mozogjon ellenkezo iranyba
+				// if(currentVector.distance(targetVector2) <
+				// map.mapConfig.torpedoExplosionRadius){
+				// this.actionQueue.add(Action.move(rotationDiff,
+				// map.mapConfig.maxAccelerationPerRound));
+				// // conn.move(session.gameId, this.id,
+				// session.mapConfiguration.maxAccelerationPerRound,
+				// rotationDiff);
+				// }
+
+				// hol lesz x kor mulva
+				for (int i = 0; i < numberOfRoundsToReachTarget; i++) {
+					targetVector2 = targetVector2.add(new XVector(v.x, v.y));
 				}
 
+				double targetVectorAngle2 = targetVector2.getAngleInDegrees();
+				if (targetVectorAngle2 < 0) {
+					targetVectorAngle2 += 360;
+				}
+				log.info("Ship[{}]: TargetVectorAngle calculated: {}", this.id, targetVectorAngle2);
 
-				break;
+//				if (this.torpedoCooldown <= 0) {
+//					this.actionQueue.add(Action.shoot(targetVectorAngle2));
+//				}
+				if (canShootTorpedo()) {
+					// conn.shoot(map.gameId, this.id, targetVectorAngle2);
+					this.actionQueue.add(Action.shoot(targetVectorAngle2));
+					torpedosShotInRound = this.map.mapConfig.rounds;
+
+				}
+			}
+
+			break;
 		}
-	}
-
-	/**
-	 * /\
-	 * |   /
-	 * |  /
-	 * | /__
-	 * |/alfa)
-	 * +----------------
-	 * Return the angle [alfa] of this vector
-	 *
-	 * @param targetVector2
-	 * @return
-	 */
-	private double getAngleOfVector(Vector2D targetVector2) {
-		return Math.atan2(targetVector2.getY(), targetVector2.getX()) * 180 / Math.PI;
-	}
-
-	private void planNextMoves() {
-		nextPositions.add(new Vector2D(1700, 800));
-//		nextPositions.add(new Vector2D(width - startPosition.getX(), startPosition.getY()));
-//		nextPositions.add(new Vector2D(width - startPosition.getX(), height - startPosition.getY()));
-//		nextPositions.add(new Vector2D(startPosition.getX(), height - startPosition.getY()));
-//		nextPositions.add(new Vector2D(startPosition.getX(), startPosition.getY()));
 	}
 
 	public void setStrategy(Strategy strategy) {
 		myStrategy = strategy;
 	}
+	
+
+	 private boolean canShootTorpedo() {
+	 		if(torpedosShotInRound < 0) return true;
+	 		if(map.mapConfig.rounds - torpedosShotInRound >= map.mapConfig.torpedoCooldown) return true;
+	 		return false;
+	 	}
 
 	public void actionExecuted(Action a) {
 		if (a instanceof Action.MoveAction) {

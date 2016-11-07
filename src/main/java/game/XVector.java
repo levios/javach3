@@ -1,7 +1,17 @@
 package game;
 
-public class XVector {
 
+// FULLY IMMUTABLE
+public class XVector {
+	
+	/**
+	 *      90
+	 *      |
+	 * 180--+--0
+	 * 		|
+	 *     270
+	 */
+	
 	public double x;
 	public double y;
 
@@ -9,17 +19,27 @@ public class XVector {
 		this.x = x;
 		this.y = y;
 	}
+	
+	public double getX(){
+		return x;
+	}
+	
+	public double getY(){
+		return y;
+	}
 
 	public XVector add(XVector other) {
 		return new XVector(this.x + other.x, this.y + other.y);
 	}
-
-	public XVector addInPlace(XVector other) {
-		this.x += other.x;
-		this.y += other.y;
-		return this;
+	
+	public static XVector add(XVector first, XVector other) {
+		return new XVector(first.x + other.x, first.y + other.y);
 	}
 
+	public XVector scale(XVector vector, double scalar) {
+		return new XVector(this.x * scalar, this.y * scalar);
+	}
+	
 	public XVector scale(double scalar) {
 		return new XVector(this.x * scalar, this.y * scalar);
 	}
@@ -44,13 +64,39 @@ public class XVector {
 		return new XVector(newX, newY);
 	}
 
-	public double distanceFrom(XVector other){
+	public double distance(XVector other){
 		return this.add(other.negate()).getMagnitude();
 	}
 
 	public static XVector unit(double rotation) {
 		double radRotation = Math.toRadians(rotation);
 		return new XVector(Math.cos(radRotation), Math.sin(radRotation));
+	}
+	
+	public XVector subtract(XVector other) {
+		return new XVector(this.x - other.x, this.y - other.y);
+	}
+
+	public static XVector subtract(XVector v1, XVector v2) {
+		return new XVector(v1.x - v2.x, v1.y - v2.y);
+	}
+	
+	/**
+	 * /\
+	 * |   /
+	 * |  /
+	 * | /__
+	 * |/alfa)
+	 * +----------------
+	 * Return the angle [alfa] of this vector
+	 */
+	public double getAngleInDegrees() {
+		double angle = Math.atan2(this.y, this.x) * 180 / Math.PI;
+		if(angle < 0.0){
+			//if angle is negative, we map it info current coordinate system.
+			angle += 360.0;
+		}
+		return angle;
 	}
 
 }

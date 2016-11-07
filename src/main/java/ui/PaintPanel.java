@@ -106,7 +106,7 @@ class PaintPanel extends JPanel {
 				drawImage.translate(-ship.position.getX(), -(height - ship.position.getY()));
 			});
 
-			//draw ship's next position
+			//draw line for ship's next position
 			drawImage.setColor(Color.BLACK);
 			session.myShips
 					.stream()
@@ -125,9 +125,11 @@ class PaintPanel extends JPanel {
 
 				drawImage.translate(x, height - y);
 				drawImage.rotate(Math.toRadians(90 - torpedo.rotation));
-
-				drawImage.fillPolygon(makeTriangleX(10), makeTriangleY(10), 3);
-
+				drawImage.fillOval(
+						(int) x,
+						(int) y,
+						10,
+						10);
 				drawImage.rotate(Math.toRadians(-(90 - torpedo.rotation)));
 				drawImage.translate(-x, -(height - y));
 			});
