@@ -18,7 +18,7 @@ class PaintPanel extends JPanel {
 	private final Color GRASS_GREEN = new Color(143, 255, 40, 206);
 	private final Color FOS_LILA = new Color(153, 0, 153);
 	private final Color LILA_TORPEDO_EXPLOSION_RADIUS = new Color(238, 139, 205, 100);
-	
+
 	private final Color ENEMY_SHIP = new Color(240, 217, 65);
 
 	private static volatile GameSession session = null;
@@ -105,6 +105,14 @@ class PaintPanel extends JPanel {
 				drawImage.fillPolygon(makeTriangleX(ship.r), makeTriangleY(ship.r), 3);
 				drawImage.rotate(Math.toRadians(-(90 - ship.rotation)));
 				drawImage.translate(-ship.position.getX(), -(height - ship.position.getY()));
+
+				drawImage.setColor(HORNPUB_HEAT);
+				if (!ship.futurePositions.isEmpty()) {
+					ship.futurePositions.forEach(p -> drawImage.fillOval((int) p.x - 2, (int) (height - (p.y - 2)), 4, 4));
+				}
+				if (!ship.futureTorpedoPositions.isEmpty()){
+					ship.futureTorpedoPositions.forEach(p -> drawImage.fillOval((int) p.x - 2, (int) (height - (p.y - 2)), 4, 4));
+				}
 			});
 
 			//draw line for ship's next position
@@ -123,14 +131,14 @@ class PaintPanel extends JPanel {
 				double x = torpedo.position.getX();
 				double y = torpedo.position.getY();
 				drawImage.translate(x, height - y);
-				
+
 				drawImage.setColor(LILA_TORPEDO_EXPLOSION_RADIUS);
 				drawImage.fillOval(
 						(-session.mapConfiguration.torpedoExplosionRadius),
 						(-session.mapConfiguration.torpedoExplosionRadius),
 						(session.mapConfiguration.torpedoExplosionRadius * 2),
 						(session.mapConfiguration.torpedoExplosionRadius * 2));
-				
+
 				drawImage.setColor(FOS_LILA);
 				drawImage.fillOval(
 						-5,
@@ -169,7 +177,7 @@ class PaintPanel extends JPanel {
 
 	private int[] makeTriangleX(double r) {
 		return new int[]{
-				(int) -r/2, (int) r/2, 0
+				(int) -r / 2, (int) r / 2, 0
 		};
 	}
 

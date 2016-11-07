@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import strategy.AlexCaptain;
 import strategy.Captain;
 import strategy.LeviCaptain;
 import strategy.Strategy;
@@ -95,7 +96,7 @@ public class GameSession {
 			//map
 			this.map = new GameMap(gameInfo.mapConfiguration);
 			if(captain == null){
-				captain = new LeviCaptain(this.map);
+				captain = new AlexCaptain(this.map);
 			}
 			Submarine.setBounds(this.mapConfiguration);
 			Torpedo.setBounds(this.mapConfiguration);
@@ -124,7 +125,7 @@ public class GameSession {
 		List<model.Submarine> submarineModels = this.connection.submarine(this.gameId);
 		List<Submarine> submarines = submarineModels.stream().map(s ->
 				new Submarine(s.id, s.owner.name, s.position.x, s.position.y, s.velocity, s.angle, 
-						this.map, new LeviCaptain(this.map)))
+						this.map, new AlexCaptain(this.map)))
 				.collect(Collectors.toList());
 		submarines.forEach(s -> myShipMap.put(s.id, s));
 		return submarines;
