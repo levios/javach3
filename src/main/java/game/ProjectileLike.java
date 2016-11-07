@@ -1,7 +1,5 @@
 package game;
 
-import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
-
 public class ProjectileLike extends Circular {
 
 	public double rotation;
@@ -15,7 +13,7 @@ public class ProjectileLike extends Circular {
 
 	public void step() {
 		double r = Math.toRadians(this.rotation);
-		this.position = this.position.add(new Vector2D(Math.cos(r), Math.sin(r)).scalarMultiply(this.speed));
+		this.position = this.position.add(new XVector(Math.cos(r), Math.sin(r)).scale(this.speed));
 	}
 
 	public void accelerate(double deltaSpeed) {
@@ -29,6 +27,6 @@ public class ProjectileLike extends Circular {
 	public void updatePosition(double x, double y, double angle, double speed) {
 		this.rotation = angle;
 		this.speed = speed;
-		this.position = new Vector2D(x, y);
+		this.position = new XVector(x, y);
 	}
 }

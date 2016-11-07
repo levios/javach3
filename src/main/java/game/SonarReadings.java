@@ -1,7 +1,6 @@
 package game;
 
 import model.Entity;
-import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
 import java.util.List;
 
@@ -11,9 +10,9 @@ import java.util.List;
 public class SonarReadings {
 	public final List<Entity> entities;
 	public final Integer range;
-	public final Vector2D position;
+	public final XVector position;
 
-	public SonarReadings(List<Entity> entities, Vector2D position, Integer sonarRange) {
+	public SonarReadings(List<Entity> entities, XVector position, Integer sonarRange) {
 		this.entities = entities;
 		this.range = sonarRange;
 		this.position = position;

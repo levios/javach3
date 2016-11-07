@@ -4,9 +4,9 @@ public enum Strategy {
 
 	MOVEAROUND, 
 	
+	CAMP,
 	
-	CAMP;
+	FOLLOW,
 	
-	
-	
+	KILL;
 }
