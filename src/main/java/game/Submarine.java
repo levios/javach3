@@ -5,7 +5,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.sun.javafx.util.Utils;
+import model.MapConfiguration;
 
 import com.sun.tools.javac.util.Pair;
 import org.slf4j.Logger;
@@ -14,17 +14,13 @@ import org.slf4j.LoggerFactory;
 import strategy.Captain;
 import strategy.Strategy;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
-
-import connection.Connection;
-import model.MapConfiguration;
-import model.Owner;
-import model.Position;
+import com.sun.javafx.util.Utils;
 
 public class Submarine extends PlayerObject {
 
-	static Logger log = LoggerFactory.getLogger(Submarine.class);
+	private static double SHOOT_PREDICTION_EPSILON;
+	private static int MAX_SHOOT_STEPS_PREDICT;
+	private static Integer TORPEDO_SPEED;
 	private static Integer SONAR_COOLDOWN;
 	// private static Integer SONAR_RANGE;
 	private static Integer SONAR_DURATION;
@@ -34,6 +30,7 @@ public class Submarine extends PlayerObject {
 	private static int TORPEDO_COOLDOWN;
 	private static Integer SUBMARINE_RADIUS;
 
+	static Logger log = LoggerFactory.getLogger(Submarine.class);
 	private final GameMap map;
 
 	public Queue<Action> actionQueue = new LinkedBlockingQueue<>();
@@ -41,7 +38,15 @@ public class Submarine extends PlayerObject {
 	//	private boolean torpedosShotInRound;
 	public List<XVector> nextPositions = new ArrayList<>();
 	private Strategy myStrategy;
-	private int torpedosShotInRound;
+
+	// mikor lottunk utoljara
+	private int torpedosShotInRound = -1;
+
+	// hanyadik korben vagyunk
+	private int currentRoundNum = 0;
+
+	public List<XVector> futurePositions = new ArrayList<>();
+	public List<XVector> futureTorpedoPositions = new ArrayList<>();
 
 	public static void setBounds(MapConfiguration rules) {
 		SONAR_COOLDOWN = rules.extendedSonarCooldown;
@@ -53,8 +58,12 @@ public class Submarine extends PlayerObject {
 		MAX_SPEED = rules.maxSpeed;
 
 		TORPEDO_COOLDOWN = rules.torpedoCooldown;
+		TORPEDO_SPEED = rules.torpedoSpeed;
 		SUBMARINE_RADIUS = rules.submarineSize;
 
+
+		MAX_SHOOT_STEPS_PREDICT = rules.torpedoRange;
+		SHOOT_PREDICTION_EPSILON = 0.3;
 	}
 
 	public int hp;
@@ -84,7 +93,7 @@ public class Submarine extends PlayerObject {
 	 * executes current strategy
 	 */
 	public void executeStrategy() {
-		this.torpedoCooldown = Math.max(0, this.torpedoCooldown - 1);
+//		this.torpedoCooldown = Math.max(0, this.torpedoCooldown - 1);
 		this.sonarCooldown = Math.max(0, this.sonarCooldown - 1);
 
 		log.info("Torpedo cooldown: [{}: {}] ", this.id, this.torpedoCooldown);
@@ -102,52 +111,9 @@ public class Submarine extends PlayerObject {
 				XVector nextTargetPosition = nextPositions.get(0);
 				log.info("Ship[{}]: NextTargetPosition calculated: {}", this.id, nextTargetPosition.getAngleInDegrees());
 
-				// if I'm close enough, pop the Position out of the List AND add it
-				// to the end
-				if (current.distance(nextTargetPosition) < 100.0) {
-					nextPositions.remove(0);
-					nextPositions.add(nextTargetPosition);
-					nextTargetPosition = nextPositions.get(1);
+				if (this.actionQueue.size() < 10) {
+					this.gotoXY(nextTargetPosition);
 				}
-
-				// calculate iranyvektor
-				XVector targetVector = XVector.subtract(nextTargetPosition, current);
-
-				// calculate angle of target vector
-				double targetVectorAngle = targetVector.getAngleInDegrees();
-				log.info("Ship[{}]: TargetVectorAngle calculated: {}", this.id, targetVectorAngle);
-
-				// current angle is in "angle"
-				log.info("Ship[{}]: Current angle: {}", this.id, this.rotation);
-
-				// calc wood-be-perfect angle
-				double angleBetweenTwoVectors = targetVectorAngle - this.rotation;
-				if (angleBetweenTwoVectors < -180.0) {
-					angleBetweenTwoVectors += 360;
-				} else if (angleBetweenTwoVectors > 180.0) {
-					angleBetweenTwoVectors -= 360;
-				}
-				log.info("AngleBetweenTwoVectors calculated: {}", angleBetweenTwoVectors);
-
-				// calc turn
-				double turn = Utils.clamp(-MAX_STEERING, angleBetweenTwoVectors, MAX_STEERING);
-
-				log.info("Ship[{}]: Turn calculated: {}", this.id, turn);
-				// calculate speed - TODO
-
-				// validate that I wont crash into island or "palya szele" - TODO
-
-				// go
-				double acceleration;
-				if (this.speed >= MAX_SPEED)
-					acceleration = 0;
-				else
-					acceleration = Utils.clamp(0, MAX_SPEED - this.speed, MAX_ACCELERATION);
-
-				log.info("Ship[{}]: Acceleration calculated: {}", this.id, acceleration);
-
-				// conn.move(session.gameId, this.id, acceleration, turn);
-				this.actionQueue.add(Action.move(turn, acceleration));
 
 				break;
 
@@ -156,61 +122,21 @@ public class Submarine extends PlayerObject {
 			 * Ez arrol szol, hogy jon az ellen, mi meg szejjel lojjuk
 			 */
 
-				if (!map.enemyShips.isEmpty()) {
-
-					// TODO: a legmesszebbit kene ?
-
-					ProjectileLike enemy = map.enemyShips.get(0);
-					XVector enemyShip = new XVector(enemy.x(), enemy.y());
-
-					// current vector
-					XVector currentVector = new XVector(this.position.getX(), this.position.getY());
-
-					// target Vector
-					XVector targetVector2 = XVector.subtract(enemyShip, currentVector);
-
-					double distanceFromTarget = currentVector.distance(targetVector2);
-					int numberOfRoundsToReachTarget = (int) Math.ceil(distanceFromTarget / this.map.mapConfig.torpedoSpeed);
-
-					// find out where enemy ship will be in
-					// numberOfRoundsToReachTarget rounds
-					XVector v = XVector.unit(enemy.rotation);
-					v = v.scale(enemy.speed);
-
-					// // ha tul kozel van, mozogjon ellenkezo iranyba
-					// if(currentVector.distance(targetVector2) <
-					// map.mapConfig.torpedoExplosionRadius){
-					// this.actionQueue.add(Action.move(rotationDiff,
-					// map.mapConfig.maxAccelerationPerRound));
-					// // conn.move(session.gameId, this.id,
-					// session.mapConfiguration.maxAccelerationPerRound,
-					// rotationDiff);
-					// }
-
-					// hol lesz x kor mulva
-					for (int i = 0; i < numberOfRoundsToReachTarget; i++) {
-						targetVector2 = targetVector2.add(new XVector(v.x, v.y));
-					}
-
-					double targetVectorAngle2 = targetVector2.getAngleInDegrees();
-					if (targetVectorAngle2 < 0) {
-						targetVectorAngle2 += 360;
-					}
-					log.info("Ship[{}]: TargetVectorAngle calculated: {}", this.id, targetVectorAngle2);
-
-//				if (this.torpedoCooldown <= 0) {
-//					this.actionQueue.add(Action.shoot(targetVectorAngle2));
-//				}
-					if (canShootTorpedo()) {
-						// conn.shoot(map.gameId, this.id, targetVectorAngle2);
-						this.actionQueue.add(Action.shoot(targetVectorAngle2));
-						torpedosShotInRound = this.map.mapConfig.rounds;
-
+				if (!this.map.enemyShips.isEmpty()) {
+					PlayerObject enemyShip = this.map.enemyShips.get(0);
+					boolean willLikelyHit = this.shootAtTarget(enemyShip);
+					if (!willLikelyHit && this.map.enemyShips.size() >= 2 ){
+						PlayerObject otherShip = this.map.enemyShips.get(1);
+						boolean willProablyHitTheOtherOne = this.shootAtTarget(otherShip);
 					}
 				}
 
 				break;
 		}
+	}
+
+	public void updateRounds() {
+		this.currentRoundNum++;
 	}
 
 	public void setStrategy(Strategy strategy) {
@@ -219,9 +145,7 @@ public class Submarine extends PlayerObject {
 
 
 	private boolean canShootTorpedo() {
-		if (torpedosShotInRound < 0) return true;
-		if (map.mapConfig.rounds - torpedosShotInRound >= map.mapConfig.torpedoCooldown) return true;
-		return false;
+		return this.torpedosShotInRound < 0 || this.currentRoundNum - torpedosShotInRound >= TORPEDO_COOLDOWN;
 	}
 
 	public void actionExecuted(Action a) {
@@ -232,21 +156,64 @@ public class Submarine extends PlayerObject {
 			this.step();
 		} else if (a instanceof Action.ShootAction) {
 //			Action.ShootAction sa = (Action.ShootAction) a;
-			this.torpedoCooldown = TORPEDO_COOLDOWN + 1;
-			log.info("Shoot successful for {}, updating cooldown to: {}", this.id, TORPEDO_COOLDOWN);
+//			this.torpedoCooldown = TORPEDO_COOLDOWN +1;
+//			log.info("Shoot successful for {}, updating cooldown to: {}", this.id, TORPEDO_COOLDOWN);
 		}
 	}
 
-	public void gotoXY(XVector target){
-		Pair<ProjectileLike, List<Action.MoveAction>> route = calculateSteps(this, this.position, target, this.map.islands);
+	public void gotoXY(XVector target) {
+		Pair<ProjectileLike, List<Action.MoveAction>> route = calculateSteps(this, this.position, target, this.map);
+
+		ProjectileLike simulator = this.clone();
+		this.futurePositions = route.snd.stream().map(a -> {
+			simulator.steer(a.steering);
+			simulator.accelerate(a.acceleration);
+			simulator.step();
+			return simulator.position;
+		}).collect(Collectors.toList());
 
 		this.actionQueue.addAll(route.snd);
 	}
 
-	public static Pair<ProjectileLike, List<Action.MoveAction>> calculateSteps(ProjectileLike projectile, XVector startingPoint, XVector target, List<Circular> islands) {
+	public boolean shootAtTarget(ProjectileLike originalTarget) {
+		if (!this.canShootTorpedo()) return false;
+
+		ProjectileLike target = originalTarget.clone();
+
+		for (int i = 1; i <= MAX_SHOOT_STEPS_PREDICT; i++) {
+			// TODO: ugy nez ki meg talan 1 korrel kesobb kezd loni mint ahogy lohetne - REVISE this part
+			target.step();
+			double distance = this.position.distance(target.position);
+			double distanceInSteps = distance / TORPEDO_SPEED;
+			double error = distanceInSteps - i;
+
+			if (Math.abs(error) < SHOOT_PREDICTION_EPSILON) {
+				XVector enemyPositionAfterISteps = target.position;
+				XVector direction = enemyPositionAfterISteps.subtract(this.position);
+				double angle = direction.getAngleInDegrees();
+				Torpedo torpedo = new Torpedo(-1L, this.owner, this.x(), this.y(), angle);
+				//torpedo.step(i);
+				this.futureTorpedoPositions.clear();
+				for (int j=0;j<i;j++){
+					torpedo.step();
+					this.futureTorpedoPositions.add(torpedo.position);
+				}
+				XVector torpedoPositionAfterISteps = torpedo.position;
+				double distanceFromShipCenter = torpedoPositionAfterISteps.distance(target.position);
+				log.info("Shooting torpedo, ETA: {}, distance from ship center when landing: {}", i, distanceFromShipCenter);
+				this.actionQueue.add(Action.shoot(angle));
+				this.torpedosShotInRound = this.currentRoundNum;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static Pair<ProjectileLike, List<Action.MoveAction>> calculateSteps(ProjectileLike projectile, XVector startingPoint, XVector target, GameMap map) {
 
 		ProjectileLike ghostShip = projectile.clone();
 		ghostShip.position = startingPoint;
+		List<Circular> islands = map.islands;
 
 		List<Action.MoveAction> moveActions = new ArrayList<>();
 
@@ -266,10 +233,10 @@ public class Submarine extends PlayerObject {
 			if (collidingIsland.isPresent()) {
 				Circular island = collidingIsland.get();
 				XVector collisionPoint = ghostShip.position;
-				XVector detourStep = collisionPoint.add(collisionPoint.subtract(island.position)).unit().scale(ghostShip.r);
-				Pair<ProjectileLike, List<Action.MoveAction>> firstSegment = calculateSteps(projectile, startingPoint, detourStep, islands);
+				XVector detourStep = collisionPoint.add(collisionPoint.subtract(island.position).unit().scale(ghostShip.r * 3));
+				Pair<ProjectileLike, List<Action.MoveAction>> firstSegment = calculateSteps(projectile, startingPoint, detourStep, map);
 				ProjectileLike lastStep = firstSegment.fst;
-				Pair<ProjectileLike, List<Action.MoveAction>> lastSegment = calculateSteps(lastStep, detourStep, target, islands);
+				Pair<ProjectileLike, List<Action.MoveAction>> lastSegment = calculateSteps(lastStep, detourStep, target, map);
 
 				List<Action.MoveAction> steps = Stream.concat(firstSegment.snd.stream(), lastSegment.snd.stream()).collect(Collectors.toList());
 
