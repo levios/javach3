@@ -12,8 +12,15 @@ public class ProjectileLike extends Circular {
 	}
 
 	public void step() {
+		this.step(1);
+	}
+
+	public void step(int steps) {
 		double r = Math.toRadians(this.rotation);
-		this.position = this.position.add(new XVector(Math.cos(r), Math.sin(r)).scale(this.speed));
+		XVector step = new XVector(Math.cos(r), Math.sin(r)).scale(this.speed);
+		for (int i = 0; i < steps; i++) {
+			this.position = this.position.add(step);
+		}
 	}
 
 	public void accelerate(double deltaSpeed) {
@@ -28,5 +35,10 @@ public class ProjectileLike extends Circular {
 		this.rotation = angle;
 		this.speed = speed;
 		this.position = new XVector(x, y);
+	}
+
+	@Override
+	public ProjectileLike clone(){
+		return new ProjectileLike(this.x(), this.y(), this.r(), this.speed, this.rotation);
 	}
 }
