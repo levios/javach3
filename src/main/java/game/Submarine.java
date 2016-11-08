@@ -1,6 +1,7 @@
 package game;
 
 import java.util.*;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -32,7 +33,7 @@ public class Submarine extends PlayerObject {
 	static Logger log = LoggerFactory.getLogger(Submarine.class);
 	private final GameMap map;
 
-	public Queue<Action> actionQueue = new LinkedBlockingQueue<>();
+	public Deque<Action> actionQueue = new LinkedBlockingDeque<>();
 
 	//	private boolean torpedosShotInRound;
 	public List<XVector> nextPositions = new ArrayList<>();
@@ -58,7 +59,6 @@ public class Submarine extends PlayerObject {
 
 		TORPEDO_COOLDOWN = rules.torpedoCooldown;
 		SUBMARINE_RADIUS = rules.submarineSize;
-
 
 		MAX_SHOOT_STEPS_PREDICT = rules.torpedoRange;
 		SHOOT_PREDICTION_EPSILON = 0.3;
@@ -99,18 +99,27 @@ public class Submarine extends PlayerObject {
 		switch (this.myStrategy) {
 
 			case MOVEAROUND:
-				// get current coordinate
-				XVector current = this.position;
-				// get next coordinate I want to go
-				if (nextPositions.isEmpty()) {
-					// this will fill the nextPositions
-					nextPositions = captain.planNextMoves(this);
-				}
-				XVector nextTargetPosition = nextPositions.get(0);
-				log.info("Ship[{}]: NextTargetPosition calculated: {}", this.id, nextTargetPosition.getAngleInDegrees());
 
-				if (this.actionQueue.size() < 10) {
-					this.gotoXY(nextTargetPosition);
+				if (!this.map.enemyShips.isEmpty()) {
+					this.actionQueue.clear();
+					PlayerObject enemyShip = this.map.enemyShips.get(0);
+					boolean willLikelyHit = this.shootAtTarget(enemyShip);
+
+					this.gotoXY(enemyShip.position);
+				} else {
+
+					if (nextPositions.isEmpty()) {
+						nextPositions = captain.planNextMoves(this);
+					}
+
+					if (this.actionQueue.size() < 3) {
+						this.actionQueue.clear();
+						XVector nextTargetPosition = nextPositions.get(0);
+						nextPositions.remove(0);
+						log.info("Ship[{}]: NextTargetPosition calculated: {}", this.id, nextTargetPosition.getAngleInDegrees());
+
+						this.gotoXY(nextTargetPosition);
+					}
 				}
 
 				break;
@@ -121,11 +130,13 @@ public class Submarine extends PlayerObject {
 			 */
 
 				if (!this.map.enemyShips.isEmpty()) {
+					this.actionQueue.clear();
 					PlayerObject enemyShip = this.map.enemyShips.get(0);
 					boolean willLikelyHit = this.shootAtTarget(enemyShip);
-					if (!willLikelyHit && this.map.enemyShips.size() >= 2) {
-						PlayerObject otherShip = this.map.enemyShips.get(1);
-						boolean willProablyHitTheOtherOne = this.shootAtTarget(otherShip);
+				} else {
+					if (this.actionQueue.size() < 3) {
+						this.actionQueue.clear();
+						this.gotoXY(this.position.add(new XVector(Math.random() * 100, Math.random() * 100)));
 					}
 				}
 
@@ -160,6 +171,11 @@ public class Submarine extends PlayerObject {
 	}
 
 	public void gotoXY(XVector target) {
+		if (this.nextPositions.isEmpty()){
+			this.nextPositions.add(target);
+		} else {
+			this.nextPositions.set(0, target);
+		}
 		Pair<ProjectileLike, List<Action.MoveAction>> route = calculateSteps(this, this.position, target, this.map);
 
 		ProjectileLike simulator = this.clone();
@@ -213,14 +229,22 @@ public class Submarine extends PlayerObject {
 		ghostShip.position = startingPoint;
 		List<Circular> islands = map.islands;
 
+		double distanceToTarget = startingPoint.distance(target);
+
 		List<Action.MoveAction> moveActions = new ArrayList<>();
 
-		while (ghostShip.position.distance(target) > ghostShip.speed) {
+		while (ghostShip.position.distance(target) > MAX_ACCELERATION) {
+			if (moveActions.size() > 100){
+				return new Pair<>(ghostShip, moveActions);
+			}
+
 			XVector direction = target.subtract(ghostShip.position);
 			double targetAngle = direction.getAngleInDegrees();
 			double angleDiff = Utils.clamp(-MAX_STEERING, targetAngle - ghostShip.rotation, MAX_STEERING);
 			double accelerationDiff = 0;
-			if (ghostShip.speed <= MAX_SPEED) {
+			if (direction.getMagnitude() < ghostShip.speed + fullStopDistance(ghostShip.speed, MAX_ACCELERATION)) {
+				accelerationDiff = -MAX_ACCELERATION;
+			} else if (ghostShip.speed <= MAX_SPEED) {
 				accelerationDiff = Utils.clamp(-MAX_ACCELERATION, MAX_SPEED - ghostShip.speed, MAX_ACCELERATION);
 			}
 			ghostShip.accelerate(accelerationDiff);
@@ -231,7 +255,7 @@ public class Submarine extends PlayerObject {
 			if (collidingIsland.isPresent()) {
 				Circular island = collidingIsland.get();
 				XVector collisionPoint = ghostShip.position;
-				XVector detourStep = collisionPoint.add(collisionPoint.subtract(island.position).unit().scale(ghostShip.r * 3));
+				XVector detourStep = collisionPoint.add(collisionPoint.subtract(island.position).unit().scale(ghostShip.r * 5));
 				Pair<ProjectileLike, List<Action.MoveAction>> firstSegment = calculateSteps(projectile, startingPoint, detourStep, map);
 				ProjectileLike lastStep = firstSegment.fst;
 				Pair<ProjectileLike, List<Action.MoveAction>> lastSegment = calculateSteps(lastStep, detourStep, target, map);
@@ -242,9 +266,24 @@ public class Submarine extends PlayerObject {
 			}
 
 			moveActions.add(new Action.MoveAction(angleDiff, accelerationDiff));
+
+//			if (ghostShip.position.distance(target) > distanceToTarget){
+//				return new Pair<>(ghostShip, moveActions);
+//			} else {
+//				distanceToTarget = ghostShip.position.distance(target);
+//			}
 		}
 
 		return new Pair<>(ghostShip, moveActions);
+	}
+
+	private static double fullStopDistance(double speed, double maxDecrement) {
+		double d = 0;
+		while (speed > 0) {
+			d += speed;
+			speed -= Math.abs(maxDecrement);
+		}
+		return d;
 	}
 
 }
