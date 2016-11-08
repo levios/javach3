@@ -1,13 +1,11 @@
 package game;
 
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Calendar;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ui.MainPaint;
 import connection.Connection;
 
 import static java.lang.System.currentTimeMillis;
@@ -83,14 +81,14 @@ public class GameThread extends Thread {
 		log.debug(game.getStatusInfo());
 		
 		/************ FOCIKLUS ************/
-		while ((System.nanoTime() - startTime) < TEST_LENGTH_IN_NANOSEC) {
+		while (game.state != GameState.ENDED) {
 			long timeBefore = currentTimeMillis();
 
 			game.updateGameInfo();
-			game.updateShipStatus();
-			game.executeStrategy();
-			game.updateRounds();
+			game.nextRound();
 			game.lastTurnLength = currentTimeMillis() - timeBefore;
+
+			log.debug("Last turn took {}ms", game.lastTurnLength);
 			
 			Thread.sleep(game.mapConfiguration.roundLength - game.lastTurnLength);
 

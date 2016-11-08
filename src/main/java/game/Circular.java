@@ -53,13 +53,19 @@ public class Circular {
 	}
 
 	/**
-	 *
-	 * @param delta
+	 * Moves the center of the circular object by the delta vector
+	 * @param delta The translation applied to the center of the object
 	 */
 	public void move(XVector delta) {
 		this.position = this.position.add(delta);
 	}
 
+	/**
+	 * A circular object with position and radius
+	 * @param x X coordinate
+	 * @param y Y coordinate
+	 * @param r Radius
+	 */
 	public Circular(double x, double y, double r) {
 		this.position = new XVector(x, y);
 		this.r = r;

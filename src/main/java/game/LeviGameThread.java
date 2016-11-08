@@ -86,7 +86,7 @@
 //
 //			game.updateGameInfo();
 //			game.updateShipStatus();
-////			game.executeStrategy();
+////			game.nextRound();
 //			
 //			Thread.sleep(1000);
 //

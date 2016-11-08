@@ -17,6 +17,7 @@ import ui.MainPaint;
 import connection.Connection;
 import main.Main;
 import model.*;
+
 import static model.ErrorCode.*;
 
 public class GameSession {
@@ -24,7 +25,7 @@ public class GameSession {
 
 	public Long gameId;
 	private Connection connection;
-	private GameState state = GameState.UNINITIALIZED;
+	public GameState state = GameState.UNINITIALIZED;
 
 	public Game gameInfo;
 	public MapConfiguration mapConfiguration;
@@ -44,6 +45,7 @@ public class GameSession {
 		this.connection = connection;
 		this.myShipMap = new HashMap<>();
 		this.gui = gui;
+		this.captain = new LeviCaptain();
 	}
 
 	public void start(Long id) throws Exception {
@@ -93,14 +95,10 @@ public class GameSession {
 		}
 
 		if (full) {
-			//map
 			this.map = new GameMap(gameInfo.mapConfiguration);
-			if(captain == null){
-				captain = new AlexCaptain(this.map);
-			}
 			Submarine.setBounds(this.mapConfiguration);
 			Torpedo.setBounds(this.mapConfiguration);
-			// Submarines
+
 			this.myShips = this.createShips();
 		}
 
@@ -124,8 +122,7 @@ public class GameSession {
 	private List<Submarine> createShips() {
 		List<model.Submarine> submarineModels = this.connection.submarine(this.gameId);
 		List<Submarine> submarines = submarineModels.stream().map(s ->
-				new Submarine(s.id, s.owner.name, s.position.x, s.position.y, s.velocity, s.angle, 
-						this.map, new AlexCaptain(this.map)))
+				new Submarine(s.id, s.owner.name, s.position.x, s.position.y, s.velocity, s.angle, this.map))
 				.collect(Collectors.toList());
 		submarines.forEach(s -> myShipMap.put(s.id, s));
 		return submarines;
@@ -141,6 +138,7 @@ public class GameSession {
 			submarine.torpedoCooldown = s.torpedoCooldown;
 			submarine.validatePosition(s.position.x, s.position.y, s.angle, s.velocity);
 		});
+		this.myShips.removeIf(ship -> ship.hp == 0);
 	}
 
 	private void evaluateStatus(String status) {
@@ -162,7 +160,7 @@ public class GameSession {
 
 	private void gracefullyStop() {
 		// TODO Auto-generated method stub
-
+		this.state = GameState.ENDED;
 	}
 
 	private void joinGame(Long id) throws Exception {
@@ -191,62 +189,61 @@ public class GameSession {
 		return statusInfo;
 	}
 
-	public void executeStrategy() {
-		List<SonarReadings> sonarReadings = this.myShips.stream().map(s -> {
-			List<Entity> entities = this.connection.sonar(this.gameId, s.id);
-			SonarReadings readings = new SonarReadings(entities, s.position, this.mapConfiguration.sonarRange);
-			this.map.applyReadings(readings);
-			return readings;
-		}).collect(Collectors.toList());
+	/**
+	 * Called every round
+	 * This function should delegate forward to ships and strategies
+	 */
+	public void nextRound() {
+		log.info("Starting next round ({})", this.round + 1);
+		this.updateShipStatus();
 
-//		this.myShips.forEach(s -> {
-//			this.connection.move(this.gameId, s.id, this.mapConfiguration.maxAccelerationPerRound, this.mapConfiguration.maxSteeringPerRound);
-//		});
-
-		//if(no enemy ships around)
-//		this.myShips.forEach(ship -> ship.setStrategy(Strategy.MOVEAROUND));
-		this.myShips.get(0).setStrategy(Strategy.MOVEAROUND);
-		this.myShips.get(1).setStrategy(Strategy.CAMP);
-		//else
-		// attach enemy ship
-		
-		// ha vmelyik meghalt, szedjuk ki
-		this.myShips.removeIf(ship -> ship.hp == 0);
-
-		this.myShips.stream().forEach(ship -> ship.executeStrategy());
+		myShips.forEach(s -> s.nextRound());
 
 		this.myShips.forEach(s -> {
-			boolean alreadyShot = false;
-			boolean alreadyMoved = false;
-			while (!s.actionQueue.isEmpty()) {
-				Action action = s.actionQueue.peek();
-				if (action instanceof Action.MoveAction && !alreadyMoved) {
-					Action.MoveAction moveAction = ((Action.MoveAction) action);
-					ErrorCode errorCode = this.connection.move(this.gameId, s.id, moveAction.acceleration, moveAction.steering);
-					if (errorCode == OK) {
-						s.actionExecuted(action);
-						alreadyMoved = true;
-						s.actionQueue.remove();
-					}
-				} else if (action instanceof Action.ShootAction && !alreadyShot) {
-					Action.ShootAction shootAction = ((Action.ShootAction) action);
-					ErrorCode errorCode = this.connection.shoot(this.gameId, s.id, shootAction.direction);
-					if (errorCode == OK) {
-						s.actionExecuted(action);
-						alreadyShot = true;
-						s.actionQueue.remove();
-					}
-				} else {
-					break;
-				}
-			}
+			List<Entity> entities = this.connection.sonar(this.gameId, s.id);
+			SonarReadings readings = new SonarReadings(entities, s.position,
+					s.sonarDuration > 0 ? this.mapConfiguration.extendedSonarRange : this.mapConfiguration.sonarRange);
+			this.map.applyReadings(readings);
 		});
 
-//		}
+		this.captain.executeStrategy(map, this.myShips);
 
+		this.myShips.forEach(this::executeNextActions);
 	}
-	
-	public void updateRounds(){
-		this.myShips.forEach(s -> s.updateRounds());
+
+	private void executeNextActions(Submarine submarine) {
+		boolean alreadyShot = false;
+		boolean alreadyMoved = false;
+		boolean alreadySonared = false;
+
+		while (!submarine.actionQueue.isEmpty()) {
+			Action action = submarine.actionQueue.peek();
+			if (action instanceof Action.MoveAction && !alreadyMoved) {
+				Action.MoveAction moveAction = ((Action.MoveAction) action);
+				log.info("Ship {}: executing {}", submarine.id, action.toString());
+				ErrorCode errorCode = this.connection.move(this.gameId, submarine.id, moveAction.acceleration, moveAction.steering);
+				if (errorCode == OK) {
+					submarine.actionExecuted(action);
+					alreadyMoved = true;
+				}
+			} else if (action instanceof Action.ShootAction && !alreadyShot) {
+				Action.ShootAction shootAction = ((Action.ShootAction) action);
+				log.info("Ship {}: executing {}", submarine.id, action.toString());
+				ErrorCode errorCode = this.connection.shoot(this.gameId, submarine.id, shootAction.direction);
+				if (errorCode == OK) {
+					submarine.actionExecuted(action);
+					alreadyShot = true;
+				}
+			} else if (action instanceof Action.SonarAction && !alreadySonared) {
+				log.info("Ship {}: executing {}", submarine.id, action.toString());
+				ErrorCode errorCode = this.connection.extendSonar(this.gameId, submarine.id);
+				if (errorCode == OK) {
+					submarine.actionExecuted(action);
+					alreadySonared = true;
+				}
+			} else {
+				break;
+			}
+		}
 	}
 }

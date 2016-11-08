@@ -107,4 +107,8 @@ public class XVector {
 		return new XVector(this.x, this.y);
 	}
 
+	@Override
+	public String toString() {
+		return "{ X: " + this.x + " , Y: " + this.y + " }";
+	}
 }

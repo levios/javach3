@@ -89,7 +89,7 @@ public class Connection {
 			conn.setRequestProperty("User-Agent", USER_AGENT);
 			conn.setRequestProperty("TEAMTOKEN", TOKEN);
 
-			log.info("{} GET to [{}]", topic, Url);
+//			log.info("{} GET to [{}]", topic, Url);
 
 			int responseCode = conn.getResponseCode();
 			if (responseCode != 200) {
@@ -110,7 +110,7 @@ public class Connection {
 
 //			io.emit(topic, jSONObjectAsString);
 
-			log.info("Get RESPONSE: {}", prettify(jSONObjectAsString));
+//			log.info("Get RESPONSE: {}", prettify(jSONObjectAsString));
 			return jSONObjectAsString;
 
 		} catch (Exception e) {
@@ -133,7 +133,7 @@ public class Connection {
 
 			// Send post request
 			jsonData = jsonData == null ? "" : jsonData;
-			log.info("{} POST to [{}]. INPUT: {}", topic, Url, prettify(jsonData));
+//			log.info("{} POST to [{}]. INPUT: {}", topic, Url, prettify(jsonData));
 			OutputStream os = conn.getOutputStream();
 			os.write(jsonData.getBytes());
 			os.close();
@@ -141,6 +141,7 @@ public class Connection {
 
 			int responseCode = conn.getResponseCode();
 			if (responseCode != 200) {
+				log.info("{} POST to [{}] FAILED. INPUT: {}", topic, Url, prettify(jsonData));
 				String message = conn.getResponseMessage();
 				Map<String, List<String>> headerFields = conn.getHeaderFields();
 				log.error("Error: {} - {}", responseCode, message);
@@ -160,7 +161,7 @@ public class Connection {
 
 //			io.emit(topic, jSONObjectAsString);
 
-			log.info("Post RESPONSE: {}", prettify(jSONObjectAsString));
+//			log.info("Post RESPONSE: {}", prettify(jSONObjectAsString));
 			return jSONObjectAsString;
 
 		} catch (Exception e) {
@@ -337,17 +338,4 @@ public class Connection {
 		JsonElement je = jp.parse(uglyJSONString);
 		return gson.toJson(je);
 	}
-
-	// public static Connection instance(String server, String username, String
-	// pw) {
-	// if(connectToUrlUsingBasicAuthentication == null){
-	// connectToUrlUsingBasicAuthentication = new Connection(server, username,
-	// pw);
-	// }
-	// return connectToUrlUsingBasicAuthentication;
-	// }
-	//
-	// public static Connection instance() {
-	// return connectToUrlUsingBasicAuthentication;
-	// }
 }

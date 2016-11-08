@@ -110,21 +110,21 @@ class PaintPanel extends JPanel {
 				if (!ship.futurePositions.isEmpty()) {
 					ship.futurePositions.forEach(p -> drawImage.fillOval((int) p.x - 2, (int) (height - (p.y - 2)), 4, 4));
 				}
-				if (!ship.futureTorpedoPositions.isEmpty()){
+				if (!ship.futureTorpedoPositions.isEmpty()) {
 					ship.futureTorpedoPositions.forEach(p -> drawImage.fillOval((int) p.x - 2, (int) (height - (p.y - 2)), 4, 4));
 				}
 			});
 
-			//draw line for ship's next position
-			drawImage.setColor(Color.BLACK);
-			session.myShips
-					.stream()
-					.filter(ship -> !ship.nextPositions.isEmpty())
-					.forEach(
-							ship -> drawImage.drawLine((int) ship.position.getX(),
-									(int) (height - ship.position.getY()),
-									(int) ship.nextPositions.get(0).getX(),
-									(int) (height - ship.nextPositions.get(0).getY())));
+//			//draw line for ship's next position
+//			drawImage.setColor(Color.BLACK);
+//			session.myShips
+//					.stream()
+//					.filter(ship -> !ship.nextPositions.isEmpty())
+//					.forEach(
+//							ship -> drawImage.drawLine((int) ship.position.getX(),
+//									(int) (height - ship.position.getY()),
+//									(int) ship.nextPositions.get(0).getX(),
+//									(int) (height - ship.nextPositions.get(0).getY())));
 
 			// Draw Torpedos 
 			session.map.torpedos.forEach(torpedo -> {
