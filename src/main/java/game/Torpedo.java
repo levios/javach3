@@ -10,7 +10,7 @@ public class Torpedo extends PlayerObject {
 	public static Integer TORPEDO_DAMAGE;
 	public static Integer TORPEDO_EXPLOSION;
 	public static Integer TORPEDO_RANGE;
-	public static Integer TORPEDO_SPEED;
+	public static double TORPEDO_SPEED;
 	private final Integer explosionRange;
 	private final Integer explosionDamage;
 	private final double life;
@@ -27,6 +27,6 @@ public class Torpedo extends PlayerObject {
 
 		this.explosionRange = TORPEDO_RANGE;
 		this.explosionDamage = TORPEDO_DAMAGE;
-		this.life = (double)TORPEDO_RANGE / (double)TORPEDO_SPEED;
+		this.life = (double)TORPEDO_RANGE / TORPEDO_SPEED;
 	}
 }

@@ -9,10 +9,10 @@ import java.util.List;
  */
 public class SonarReadings {
 	public final List<Entity> entities;
-	public final Integer range;
+	public final double range;
 	public final XVector position;
 
-	public SonarReadings(List<Entity> entities, XVector position, Integer sonarRange) {
+	public SonarReadings(List<Entity> entities, XVector position, double sonarRange) {
 		this.entities = entities;
 		this.range = sonarRange;
 		this.position = position;

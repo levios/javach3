@@ -20,13 +20,13 @@ public class Submarine extends PlayerObject {
 	private static double SHOOT_PREDICTION_EPSILON;
 	private static int MAX_SHOOT_STEPS_PREDICT;
 	private static Integer SONAR_COOLDOWN;
-	private static Integer SONAR_RANGE;
+	private static double SONAR_RANGE;
 	private static Integer SONAR_DURATION;
-	public static Integer MAX_ACCELERATION;
-	public static Integer MAX_STEERING;
-	public static Integer MAX_SPEED;
+	public static double MAX_ACCELERATION;
+	public static double MAX_STEERING;
+	public static double MAX_SPEED;
 	public static int TORPEDO_COOLDOWN;
-	public static Integer SUBMARINE_RADIUS;
+	public static double SUBMARINE_RADIUS;
 
 	private final GameMap map;
 
@@ -64,7 +64,11 @@ public class Submarine extends PlayerObject {
 	public Submarine(long id, String owner, double x, double y, double speed, double rotation, GameMap map) {
 		super(id, owner, PlayerObjectType.SUBMARINE, x, y, SUBMARINE_RADIUS, speed, rotation);
 		this.map = map;
-		this.hp = map.mapConfig.torpedoDamage * 3;
+		this.hp = (int)(map.mapConfig.torpedoDamage * 3);
+	}
+
+	public Long getId(){
+		return this.id;
 	}
 
 	public void nextRound() {

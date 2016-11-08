@@ -45,7 +45,7 @@ public class MapConfiguration {
 	public Integer sonarRange;
 	@SerializedName("extendedSonarRange")
 	@Expose
-	public Integer extendedSonarRange;
+	public Double extendedSonarRange;
 	@SerializedName("extendedSonarRounds")
 	@Expose
 	public Integer extendedSonarRounds;
@@ -54,7 +54,7 @@ public class MapConfiguration {
 	public Integer extendedSonarCooldown;
 	@SerializedName("torpedoSpeed")
 	@Expose
-	public Integer torpedoSpeed;
+	public Double torpedoSpeed;
 	@SerializedName("torpedoExplosionRadius")
 	@Expose
 	public Integer torpedoExplosionRadius;
@@ -63,22 +63,22 @@ public class MapConfiguration {
 	public Integer roundLength;
 	@SerializedName("islandSize")
 	@Expose
-	public Integer islandSize;
+	public Double islandSize;
 	@SerializedName("submarineSize")
 	@Expose
-	public Integer submarineSize;
+	public Double submarineSize;
 	@SerializedName("rounds")
 	@Expose
 	public Integer rounds;
 	@SerializedName("maxSteeringPerRound")
 	@Expose
-	public Integer maxSteeringPerRound;
+	public Double maxSteeringPerRound;
 	@SerializedName("maxAccelerationPerRound")
 	@Expose
-	public Integer maxAccelerationPerRound;
+	public Double maxAccelerationPerRound;
 	@SerializedName("maxSpeed")
 	@Expose
-	public Integer maxSpeed;
+	public Double maxSpeed;
 	@SerializedName("torpedoRange")
 	@Expose
 	public Integer torpedoRange;

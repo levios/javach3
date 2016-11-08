@@ -1,9 +1,11 @@
 package game;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -134,12 +136,15 @@ public class GameSession {
 
 	public void updateShipStatus() {
 		List<model.Submarine> submarineModels = this.connection.submarine(this.gameId);
-		aliveSubmarinessubmarineModels.forEach(s -> {
+		List<Submarine> aliveSubmarines = submarineModels.stream().map(s -> {
 			Submarine submarine = this.myShipMap.get(s.id);
 			submarine.hp = s.hp;
 			submarine.validatePosition(s.position.x, s.position.y, s.angle, s.velocity);
-		});
+			return submarine;
+		}).filter(s -> s.hp > 0).collect(Collectors.toList());
+
 		this.myShips.retainAll(aliveSubmarines);
+		this.myShipMap = myShips.stream().collect(Collectors.toMap(Submarine::getId, Function.identity()));
 	}
 
 	private void evaluateStatus(String status) {
