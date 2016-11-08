@@ -25,4 +25,25 @@ public class LeviCaptain extends Captain {
 		nextPositions.add(new XVector(startPosition.x, startPosition.y));
 		return nextPositions;
 	}
+	
+	public void executeStrategy() {
+		/* if enemies are around:
+		 * 	foreach ship : myship:
+		 * 		if ship.canShoot:
+		 * 			if ship.wouldHitEnemy:
+		 * 				if ship.wouldNotKillAnyOne:
+		 * 					ship.shoot
+		 * 				else:
+		 * 					ship.move - closer/furher
+		 * 			else:
+		 * 				ship.move - closer
+		 *  else:
+		 *  	if can extendedSolar:
+		 *  		do extendedSolar
+		 *  	else
+		 *  		move in cikk cakk
+		 */
+		
+		
+	}
 }
