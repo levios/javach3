@@ -16,7 +16,7 @@ public interface Action {
 
 		@Override
 		public String toString() {
-			return "MoveAction { turn: " + this.steering + ", accelerate: " + this.acceleration + " }";
+			return "MoveAction { turn: " + this.steering + ", speed: " + this.acceleration + " }";
 		}
 	}
 

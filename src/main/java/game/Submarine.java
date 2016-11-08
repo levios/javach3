@@ -64,7 +64,7 @@ public class Submarine extends PlayerObject {
 	public Submarine(long id, String owner, double x, double y, double speed, double rotation, GameMap map) {
 		super(id, owner, PlayerObjectType.SUBMARINE, x, y, SUBMARINE_RADIUS, speed, rotation);
 		this.map = map;
-		this.hp = (int)(map.mapConfig.torpedoDamage * 3);
+		this.hp = (map.mapConfig.torpedoDamage * 3);
 	}
 
 	public Long getId(){
@@ -180,8 +180,6 @@ public class Submarine extends PlayerObject {
 		ghostShip.position = startingPoint;
 		List<Circular> islands = map.islands;
 
-//		double distanceToTarget = startingPoint.distance(target);
-
 		List<Action.MoveAction> moveActions = new ArrayList<>();
 
 		while (ghostShip.position.distance(target) > MAX_SPEED) {
@@ -209,6 +207,9 @@ public class Submarine extends PlayerObject {
 			} else if (!eql(ghostShip.speed, targetSpeed)) {
 				accelerationDiff = Utils.clamp(-MAX_ACCELERATION, targetSpeed - ghostShip.speed, MAX_ACCELERATION);
 			}
+			// CURRENTLY: this shit can only accept -maxacceleration or +maxacceleration, otherwise 400., so round it to the closest 5
+			accelerationDiff = Math.round(accelerationDiff / MAX_ACCELERATION)*MAX_ACCELERATION;
+
 			ghostShip.accelerate(accelerationDiff);
 			ghostShip.steer(angleDiff);
 			ghostShip.step();
@@ -228,12 +229,6 @@ public class Submarine extends PlayerObject {
 			}
 
 			moveActions.add(Action.move(angleDiff, accelerationDiff));
-
-//			if (ghostShip.position.distance(target) > distanceToTarget){
-//				return new Pair<>(ghostShip, moveActions);
-//			} else {
-//				distanceToTarget = ghostShip.position.distance(target);
-//			}
 		}
 
 		return new Pair<>(ghostShip, moveActions);

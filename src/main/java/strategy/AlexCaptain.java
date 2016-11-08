@@ -7,24 +7,26 @@ import java.util.List;
 
 public class AlexCaptain extends Captain {
 
-	private int shellshockcountdown;
+	private double shellshockcountdown;
+	private int otherCountdown;
 
 	public AlexCaptain() {
-		shellshockcountdown = 1;
+		shellshockcountdown = 0.0;
+		otherCountdown = 0;
 	}
 
 	@Override
 	public void executeStrategy(GameMap map, List<Submarine> myShips) {
 		Submarine submarine = myShips.get(0);
 
-		if (shellshockcountdown-- == 0) {
-			log.info("SHELLSHOCK INC.");
-			submarine.actionQueue.add(Action.move(0.01, 1.01));
-			if (submarine.canShootTorpedo())
-				submarine.actionQueue.add(Action.shoot(33));
-//			if (submarine.isSonarReady())
-//				submarine.actionQueue.add(Action.activateSonar());
-		}
+		log.info("SHELLSHOCK INC.");
+		submarine.actionQueue.add(Action.move(shellshockcountdown,
+				5
+		));
+		if (submarine.canShootTorpedo())
+			submarine.actionQueue.add(Action.shoot(33));
+		if (submarine.isSonarReady())
+			submarine.actionQueue.add(Action.activateSonar());
 	}
 
 }

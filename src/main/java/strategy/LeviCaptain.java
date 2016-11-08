@@ -57,7 +57,7 @@ public class LeviCaptain extends Captain {
 			} else {
 				if (battleship.actionQueue.size() < 3) {
 					battleship.actionQueue.clear();
-					battleship.gotoXY(battleship.position.add(new XVector(Math.random() * 200 - 50, Math.random() * 200 - 100)));
+					battleship.gotoXY(battleship.position.add(new XVector(Math.random() * 400 - 100, Math.random() * 400 - 100)));
 				}
 			}
 

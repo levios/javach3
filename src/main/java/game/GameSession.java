@@ -92,6 +92,10 @@ public class GameSession {
 		this.myScore = gameInfo.scores.scores.myScore;
 		this.mapConfiguration = gameInfo.mapConfiguration;
 
+		if (this.round >= gameInfo.mapConfiguration.rounds){
+			this.gracefullyStop();
+		}
+
 		if (GUI == null && this.gui) {
 			GUI = startUI(mapConfiguration.width, mapConfiguration.height);
 		}
