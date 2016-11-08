@@ -95,13 +95,18 @@ public class GameSession {
 		if (full) {
 			//map
 			this.map = new GameMap(gameInfo.mapConfiguration);
-			if(captain == null){
-				captain = new AlexCaptain(this.map);
-			}
+
 			Submarine.setBounds(this.mapConfiguration);
 			Torpedo.setBounds(this.mapConfiguration);
 			// Submarines
+			
+			if(captain == null){
+				captain = new LeviCaptain(this.map);
+			}
+			
 			this.myShips = this.createShips();
+			
+			captain.setShips(this.myShips);
 		}
 
 		this.connectionStatus = gameInfo.connectionStatus;
@@ -125,7 +130,7 @@ public class GameSession {
 		List<model.Submarine> submarineModels = this.connection.submarine(this.gameId);
 		List<Submarine> submarines = submarineModels.stream().map(s ->
 				new Submarine(s.id, s.owner.name, s.position.x, s.position.y, s.velocity, s.angle, 
-						this.map, new AlexCaptain(this.map)))
+						this.map, captain))
 				.collect(Collectors.toList());
 		submarines.forEach(s -> myShipMap.put(s.id, s));
 		return submarines;
@@ -206,7 +211,7 @@ public class GameSession {
 		//if(no enemy ships around)
 //		this.myShips.forEach(ship -> ship.setStrategy(Strategy.MOVEAROUND));
 		this.myShips.get(0).setStrategy(Strategy.MOVEAROUND);
-		this.myShips.get(1).setStrategy(Strategy.CAMP);
+		this.myShips.get(1).setStrategy(Strategy.MOVEAROUND);
 		//else
 		// attach enemy ship
 		
@@ -218,9 +223,10 @@ public class GameSession {
 		this.myShips.forEach(s -> {
 			boolean alreadyShot = false;
 			boolean alreadyMoved = false;
-			while (!s.actionQueue.isEmpty()) {
+			boolean alreadyExtendedSonar = false;
+			if (!s.actionQueue.isEmpty()) {
 				Action action = s.actionQueue.peek();
-				if (action instanceof Action.MoveAction && !alreadyMoved) {
+				if (action instanceof Action.MoveAction && !alreadyMoved && !alreadyShot) {
 					Action.MoveAction moveAction = ((Action.MoveAction) action);
 					ErrorCode errorCode = this.connection.move(this.gameId, s.id, moveAction.acceleration, moveAction.steering);
 					if (errorCode == OK) {
@@ -228,7 +234,7 @@ public class GameSession {
 						alreadyMoved = true;
 						s.actionQueue.remove();
 					}
-				} else if (action instanceof Action.ShootAction && !alreadyShot) {
+				} else if (action instanceof Action.ShootAction && !alreadyShot && !alreadyMoved) {
 					Action.ShootAction shootAction = ((Action.ShootAction) action);
 					ErrorCode errorCode = this.connection.shoot(this.gameId, s.id, shootAction.direction);
 					if (errorCode == OK) {
@@ -236,8 +242,16 @@ public class GameSession {
 						alreadyShot = true;
 						s.actionQueue.remove();
 					}
+				} else if (action instanceof Action.ExtendedSonarAction && !alreadyExtendedSonar) {
+					Action.ExtendedSonarAction sonarAction = ((Action.ExtendedSonarAction) action);
+					ErrorCode errorCode = this.connection.extendSonar(this.gameId, s.id);
+					if (errorCode == OK) {
+						s.actionExecuted(action);
+						alreadyExtendedSonar = true;
+						s.actionQueue.remove();
+					}
 				} else {
-					break;
+					//break;
 				}
 			}
 		});

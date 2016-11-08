@@ -17,7 +17,7 @@ public class GameMap {
 	public Integer height;
 	public Integer width;
 	public List<Circular> islands;
-	public List<PlayerObject> enemyShips;
+	public List<ProjectileLike> enemyShips;
 	public List<PlayerObject> torpedos;
 //	public Map<Integer, ProjectileLike> enemyShipsMap = new HashMap<>();
 //	public Map<Integer, Torpedo> torpedoMap = new HashMap<>();

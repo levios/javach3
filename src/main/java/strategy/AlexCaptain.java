@@ -24,4 +24,10 @@ public class AlexCaptain extends Captain{
 		return nextPositions;
 	}
 
+	@Override
+	public void executeStrategy(Submarine ship) {
+		// TODO Auto-generated method stub
+		return;
+	}
+
 }

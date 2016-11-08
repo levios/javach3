@@ -92,7 +92,10 @@ public class GameThread extends Thread {
 			game.updateRounds();
 			game.lastTurnLength = currentTimeMillis() - timeBefore;
 			
-			Thread.sleep(game.mapConfiguration.roundLength - game.lastTurnLength);
+			long timeToSleep = game.mapConfiguration.roundLength - game.lastTurnLength;
+			while(timeToSleep < 0)
+				timeToSleep += 2.0;
+			Thread.sleep(timeToSleep);
 
 			cycleStartTime = System.nanoTime();
 

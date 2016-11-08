@@ -22,6 +22,8 @@ public interface Action {
 			this.direction = direction;
 		}
 	}
+	
+	class ExtendedSonarAction implements Action {}
 
 	static MoveAction move(double steering, double acceleration) {
 		return new MoveAction(steering, acceleration);
@@ -29,5 +31,9 @@ public interface Action {
 
 	static ShootAction shoot(double direction) {
 		return new ShootAction(direction);
+	}
+	
+	static ExtendedSonarAction extendedSonar() {
+		return new ExtendedSonarAction();
 	}
 }
