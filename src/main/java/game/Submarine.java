@@ -15,6 +15,8 @@ import com.sun.javafx.util.Utils;
 
 public class Submarine extends PlayerObject {
 
+	private static final int ELASTICITY_TRIES_MAX = 4;
+	private static final int ELASTICITY_STEP = 1;
 	private static double SHOOT_PREDICTION_EPSILON;
 	private static int MAX_SHOOT_STEPS_PREDICT;
 	private static Integer SONAR_COOLDOWN;
@@ -66,7 +68,7 @@ public class Submarine extends PlayerObject {
 	}
 
 	public void nextRound() {
-		log.info("Starting next round ({})", this.currentRoundNum +1);
+		log.info("Starting next round ({})", this.currentRoundNum + 1);
 		this.currentRoundNum++;
 		this.torpedoCooldown = Math.max(0, this.torpedoCooldown - 1);
 		this.sonarCooldown = Math.max(0, this.sonarCooldown - 1);
@@ -81,10 +83,6 @@ public class Submarine extends PlayerObject {
 		log.info("Prediction error for {} is {}", this.id, predictionError);
 
 		this.updatePosition(x, y, angle, speed);
-	}
-
-	private boolean canShootTorpedo() {
-		return this.torpedosShotInRound < 0 || this.currentRoundNum - torpedosShotInRound >= TORPEDO_COOLDOWN;
 	}
 
 	public void actionExecuted(Action a) {
@@ -103,10 +101,10 @@ public class Submarine extends PlayerObject {
 			log.info("Ship {} moved to {}", this.id, this.position);
 		} else if (a instanceof Action.ShootAction) {
 			Action.ShootAction sa = (Action.ShootAction) a;
-			this.torpedoCooldown = TORPEDO_COOLDOWN + 1;
+			this.torpedoCooldown = TORPEDO_COOLDOWN;
 			log.info("Ship {} shot torpedo. Cooldown is now {}", this.id, this.torpedoCooldown);
 		} else if (a instanceof Action.SonarAction) {
-			this.sonarCooldown = SONAR_COOLDOWN + 1;
+			this.sonarCooldown = SONAR_COOLDOWN;
 			this.sonarDuration = SONAR_DURATION;
 			log.info("Ship {} activated sonar. Cooldown is now {}", this.id, this.sonarCooldown);
 		}
@@ -147,7 +145,18 @@ public class Submarine extends PlayerObject {
 	}
 
 	public void gotoXY(XVector target) {
-		Pair<ProjectileLike, List<Action.MoveAction>> route = calculateSteps(this, this.position, target, this.map);
+		Pair<ProjectileLike, List<Action.MoveAction>> route = null;
+		int minimumRouteLength = Integer.MAX_VALUE;
+		for (int i = 1; i < ELASTICITY_TRIES_MAX; i++) {
+			Pair<ProjectileLike, List<Action.MoveAction>> testRoute =
+					calculateSteps(this, this.position, target, this.map, i * ELASTICITY_STEP);
+
+			if (testRoute.snd.size() < minimumRouteLength){
+				route = testRoute;
+				minimumRouteLength = testRoute.snd.size();
+			}
+		}
+		assert route != null;
 
 		ProjectileLike simulator = this.clone();
 		this.futurePositions = route.snd.stream().map(a -> {
@@ -160,7 +169,8 @@ public class Submarine extends PlayerObject {
 		this.actionQueue.addAll(route.snd);
 	}
 
-	private static Pair<ProjectileLike, List<Action.MoveAction>> calculateSteps(ProjectileLike projectile, XVector startingPoint, XVector target, GameMap map) {
+	private static Pair<ProjectileLike, List<Action.MoveAction>> calculateSteps(ProjectileLike projectile, XVector startingPoint, XVector target, GameMap map, double elasticity) {
+		elasticity = Math.max(elasticity, 1);
 
 		ProjectileLike ghostShip = projectile.clone();
 		ghostShip.position = startingPoint;
@@ -170,19 +180,30 @@ public class Submarine extends PlayerObject {
 
 		List<Action.MoveAction> moveActions = new ArrayList<>();
 
-		while (ghostShip.position.distance(target) > MAX_ACCELERATION) {
+		while (ghostShip.position.distance(target) > MAX_SPEED) {
 			if (moveActions.size() > 100) {
 				return new Pair<>(ghostShip, moveActions);
 			}
 
 			XVector direction = target.subtract(ghostShip.position);
+			double targetSpeed = MAX_SPEED;
 			double targetAngle = direction.getAngleInDegrees();
-			double angleDiff = Utils.clamp(-MAX_STEERING, targetAngle - ghostShip.rotation, MAX_STEERING);
+			double angleDiff = (targetAngle - ghostShip.rotation);
+
+			if (angleDiff > 180) {
+				angleDiff = -(360 - angleDiff);
+			}
+			else if (angleDiff < -180) angleDiff = 360 + angleDiff;
+			if (angleDiff > MAX_STEERING || angleDiff < -MAX_STEERING){
+				angleDiff = Utils.clamp(-MAX_STEERING, angleDiff, MAX_STEERING);
+				targetSpeed = MAX_SPEED * (1 - Math.abs(angleDiff) / (MAX_STEERING * elasticity));
+			}
+
 			double accelerationDiff = 0;
 			if (direction.getMagnitude() < ghostShip.speed + fullStopDistance(ghostShip.speed, MAX_ACCELERATION)) {
 				accelerationDiff = -MAX_ACCELERATION;
-			} else if (ghostShip.speed <= MAX_SPEED) {
-				accelerationDiff = Utils.clamp(-MAX_ACCELERATION, MAX_SPEED - ghostShip.speed, MAX_ACCELERATION);
+			} else if (!eql(ghostShip.speed, targetSpeed)) {
+				accelerationDiff = Utils.clamp(-MAX_ACCELERATION, targetSpeed - ghostShip.speed, MAX_ACCELERATION);
 			}
 			ghostShip.accelerate(accelerationDiff);
 			ghostShip.steer(angleDiff);
@@ -193,9 +214,9 @@ public class Submarine extends PlayerObject {
 				Circular island = collidingIsland.get();
 				XVector collisionPoint = ghostShip.position;
 				XVector detourStep = collisionPoint.add(collisionPoint.subtract(island.position).unit().scale(ghostShip.r * 5));
-				Pair<ProjectileLike, List<Action.MoveAction>> firstSegment = calculateSteps(projectile, startingPoint, detourStep, map);
+				Pair<ProjectileLike, List<Action.MoveAction>> firstSegment = calculateSteps(projectile, startingPoint, detourStep, map, elasticity);
 				ProjectileLike lastStep = firstSegment.fst;
-				Pair<ProjectileLike, List<Action.MoveAction>> lastSegment = calculateSteps(lastStep, detourStep, target, map);
+				Pair<ProjectileLike, List<Action.MoveAction>> lastSegment = calculateSteps(lastStep, detourStep, target, map, elasticity);
 
 				List<Action.MoveAction> steps = Stream.concat(firstSegment.snd.stream(), lastSegment.snd.stream()).collect(Collectors.toList());
 
@@ -216,7 +237,8 @@ public class Submarine extends PlayerObject {
 
 	public boolean tryActivateSonar() {
 		if (this.isSonarReady()) {
-			this.actionQueue.add(Action.activateSonar());
+			// Sonar activates instantly, put it in the front of the queue
+			this.actionQueue.push(Action.activateSonar());
 			return true;
 		} else {
 			return false;
@@ -231,8 +253,15 @@ public class Submarine extends PlayerObject {
 		}
 		return d;
 	}
+	private static boolean eql(double a, double b){
+		return Math.abs(a-b) < 0.0000000001;
+	}
 
 	public boolean isSonarReady() {
 		return this.sonarCooldown == 0;
+	}
+
+	public boolean canShootTorpedo() {
+		return this.torpedoCooldown == 0;
 	}
 }

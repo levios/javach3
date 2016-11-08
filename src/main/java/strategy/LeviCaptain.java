@@ -26,7 +26,7 @@ public class LeviCaptain extends Captain {
 		if (myShips.size() > 0) {
 			Submarine explorer = myShips.get(0);
 
-			if (!this.map.enemyShips.isEmpty()) {
+			if (false && !this.map.enemyShips.isEmpty()) {
 				explorer.actionQueue.clear();
 				PlayerObject enemyShip = this.map.enemyShips.get(0);
 				boolean willLikelyHit = explorer.shootAtTarget(enemyShip);
@@ -50,7 +50,7 @@ public class LeviCaptain extends Captain {
 		if (myShips.size() > 1){
 			Submarine battleship = myShips.get(1);
 
-			if (!this.map.enemyShips.isEmpty()) {
+			if (false && !this.map.enemyShips.isEmpty()) {
 				battleship.actionQueue.clear();
 				PlayerObject enemyShip = this.map.enemyShips.get(0);
 				boolean willLikelyHit = battleship.shootAtTarget(enemyShip);

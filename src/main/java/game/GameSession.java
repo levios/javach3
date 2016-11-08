@@ -121,24 +121,25 @@ public class GameSession {
 
 	private List<Submarine> createShips() {
 		List<model.Submarine> submarineModels = this.connection.submarine(this.gameId);
-		List<Submarine> submarines = submarineModels.stream().map(s ->
-				new Submarine(s.id, s.owner.name, s.position.x, s.position.y, s.velocity, s.angle, this.map))
-				.collect(Collectors.toList());
+		List<Submarine> submarines = submarineModels.stream().map(s ->{
+			Submarine submarine = new Submarine(s.id, s.owner.name, s.position.x, s.position.y, s.velocity, s.angle, this.map);
+			submarine.hp = s.hp;
+			submarine.torpedoCooldown = s.torpedoCooldown + 2;
+			submarine.sonarCooldown = s.sonarCooldown +2;
+			return submarine;
+		}).collect(Collectors.toList());
 		submarines.forEach(s -> myShipMap.put(s.id, s));
 		return submarines;
 	}
 
 	public void updateShipStatus() {
 		List<model.Submarine> submarineModels = this.connection.submarine(this.gameId);
-		submarineModels.forEach(s -> {
+		aliveSubmarinessubmarineModels.forEach(s -> {
 			Submarine submarine = this.myShipMap.get(s.id);
 			submarine.hp = s.hp;
-			submarine.sonarCooldown = s.sonarCooldown;
-			submarine.sonarDuration = s.sonarExtended;
-			submarine.torpedoCooldown = s.torpedoCooldown;
 			submarine.validatePosition(s.position.x, s.position.y, s.angle, s.velocity);
 		});
-		this.myShips.removeIf(ship -> ship.hp == 0);
+		this.myShips.retainAll(aliveSubmarines);
 	}
 
 	private void evaluateStatus(String status) {
