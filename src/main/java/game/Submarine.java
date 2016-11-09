@@ -7,14 +7,16 @@ import java.util.stream.Stream;
 
 import model.MapConfiguration;
 
-import com.sun.tools.javac.util.Pair;
+//import com.sun.tools.javac.util.Pair;
 
+
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sun.javafx.util.Utils;
 
-@SuppressWarnings("restriction")
+//@SuppressWarnings("restriction")
 public class Submarine extends PlayerObject {
 
 	private static final int ELASTICITY_TRIES_MAX = 3;
@@ -245,8 +247,8 @@ public class Submarine extends PlayerObject {
 					//predict my move after i steps
 					ProjectileLike ghostShip = (ProjectileLike) this.clone();
 					ghostShip.step(i);
-					if(ghostShip.position.distance(torpedoPositionAfterISteps) < Torpedo.TORPEDO_EXPLOSION
-							&& this.hp < Torpedo.TORPEDO_DAMAGE){
+					if(ghostShip.position.distance(torpedoPositionAfterISteps) < Torpedo.TORPEDO_EXPLOSION * 1.5
+							&& this.hp <= Torpedo.TORPEDO_DAMAGE){
 						log.info("I would be too close to Explosion AND I have low life: I dont shoot");
 						return false;
 					}
@@ -272,22 +274,22 @@ public class Submarine extends PlayerObject {
 			Pair<ProjectileLike, List<Action.MoveAction>> testRoute =
 					calculateSteps(this, this.position, target, this.map, i * ELASTICITY_STEP);
 
-			if (testRoute.snd.size() < minimumRouteLength){
+			if (testRoute.getValue().size() < minimumRouteLength){
 				route = testRoute;
-				minimumRouteLength = testRoute.snd.size();
+				minimumRouteLength = testRoute.getValue().size();
 			}
 		}
 		assert route != null;
 
 		ProjectileLike simulator = this.clone();
-		this.futurePositions = route.snd.stream().map(a -> {
+		this.futurePositions = route.getValue().stream().map(a -> {
 			simulator.steer(a.steering);
 			simulator.accelerate(a.acceleration);
 			simulator.step();
 			return simulator.position;
 		}).collect(Collectors.toList());
 
-		this.actionQueue.addAll(route.snd);
+		this.actionQueue.addAll(route.getValue());
 	}
 	
 //	public void gotoXY(XVector nextTargetPosition) {
@@ -344,7 +346,7 @@ public class Submarine extends PlayerObject {
 
 		while (ghostShip.position.distance(target) > MAX_SPEED) {
 			if (moveActions.size() > 100) {
-				return new Pair<>(ghostShip, moveActions);
+				return Pair.of(ghostShip, moveActions);
 			}
 
 			XVector direction = target.subtract(ghostShip.position);
@@ -380,18 +382,18 @@ public class Submarine extends PlayerObject {
 				XVector collisionPoint = ghostShip.position;
 				XVector detourStep = collisionPoint.add(collisionPoint.subtract(island.position).unit().scale(ghostShip.r * 5));
 				Pair<ProjectileLike, List<Action.MoveAction>> firstSegment = calculateSteps(projectile, startingPoint, detourStep, map, elasticity);
-				ProjectileLike lastStep = firstSegment.fst;
+				ProjectileLike lastStep = firstSegment.getLeft();
 				Pair<ProjectileLike, List<Action.MoveAction>> lastSegment = calculateSteps(lastStep, detourStep, target, map, elasticity);
 
-				List<Action.MoveAction> steps = Stream.concat(firstSegment.snd.stream(), lastSegment.snd.stream()).collect(Collectors.toList());
+				List<Action.MoveAction> steps = Stream.concat(firstSegment.getRight().stream(), lastSegment.getRight().stream()).collect(Collectors.toList());
 
-				return new Pair<>(lastSegment.fst, steps);
+				return Pair.of(lastSegment.getLeft(), steps);
 			}
 
 			moveActions.add(Action.move(angleDiff, accelerationDiff));
 		}
 
-		return new Pair<>(ghostShip, moveActions);
+		return Pair.of(ghostShip, moveActions);
 	}
 
 	public boolean tryActivateSonar() {
@@ -466,22 +468,22 @@ public class Submarine extends PlayerObject {
 			Pair<ProjectileLike, List<Action.MoveAction>> testRoute =
 					calculateSteps(this, this.position, target, this.map, i * ELASTICITY_STEP);
 
-			if (testRoute.snd.size() < minimumRouteLength){
+			if (testRoute.getRight().size() < minimumRouteLength){
 				route = testRoute;
-				minimumRouteLength = testRoute.snd.size();
+				minimumRouteLength = testRoute.getRight().size();
 			}
 		}
 		assert route != null;
 
 		ProjectileLike simulator = this.clone();
-		this.futurePositions = route.snd.stream().map(a -> {
+		this.futurePositions = route.getRight().stream().map(a -> {
 			simulator.steer(a.steering);
 			simulator.accelerate(a.acceleration);
 			simulator.step();
 			return simulator.position;
 		}).collect(Collectors.toList());
 
-		return route.snd.size();
+		return route.getRight().size();
 	}
 
 	public boolean canUseExtendedSonar() {

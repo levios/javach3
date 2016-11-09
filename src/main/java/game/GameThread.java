@@ -93,10 +93,10 @@ public class GameThread extends Thread {
 	
 				log.debug("Last turn took {}ms", game.lastTurnLength);
 	
-	//			long timeToSleep = game.mapConfiguration.roundLength - game.lastTurnLength + 100;
-	//			while(timeToSleep < 0)
-	//				timeToSleep += 2000;
-				Thread.sleep(game.mapConfiguration.roundLength);
+				long timeToSleep = game.mapConfiguration.roundLength - game.lastTurnLength;
+				while(timeToSleep < 0)
+					timeToSleep += 2000;
+				Thread.sleep(timeToSleep + 20);
 				
 			} catch(Exception e) {
 				e.printStackTrace();

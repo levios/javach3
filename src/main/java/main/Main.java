@@ -13,7 +13,7 @@ public class Main {
 	static Logger log = LoggerFactory.getLogger(Main.class);
 	public static MainPaint GUI;
 	
-	public static boolean hasGui = true;
+	public static boolean hasGui = false;
 
 	public static void main(String[] args) {
 		try {

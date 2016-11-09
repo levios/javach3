@@ -89,7 +89,11 @@ public class GameSession {
 
 		this.gameInfo = gameInfo;
 		this.round = gameInfo.round;
+		log.info("**********");
+		log.info("**********   round: {}", this.round);
 		this.myScore = gameInfo.scores.scores.myScore;
+		log.info("********** myScore: {}", this.myScore);
+		log.info("**********");
 		this.mapConfiguration = gameInfo.mapConfiguration;
 
 		if (this.round >= gameInfo.mapConfiguration.rounds){
