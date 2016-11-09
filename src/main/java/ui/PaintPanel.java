@@ -15,6 +15,7 @@ class PaintPanel extends JPanel {
 	private final Color OCEAN_BLUE = new Color(119, 207, 255);
 	private final Color HORNPUB_HEAT = new Color(205, 27, 17);
 	private final Color SONAR_SEAWEED = new Color(65, 255, 70, 62);
+	private final Color EXTENDED_SONAR_SPONGEBOB = new Color(236, 208, 114, 62);
 	private final Color GRASS_GREEN = new Color(143, 255, 40, 206);
 	private final Color FOS_LILA = new Color(153, 0, 153);
 	private final Color LILA_TORPEDO_EXPLOSION_RADIUS = new Color(238, 139, 205, 100);
@@ -88,12 +89,21 @@ class PaintPanel extends JPanel {
 				drawImage.translate(ship.position.getX(), height - ship.position.getY());
 				drawImage.rotate(Math.toRadians(90 - ship.rotation));
 
-				drawImage.setColor(SONAR_SEAWEED);
-				drawImage.fillOval(
-						(-session.mapConfiguration.sonarRange),
-						(-session.mapConfiguration.sonarRange),
-						(session.mapConfiguration.sonarRange * 2),
-						(session.mapConfiguration.sonarRange * 2));
+				if(!ship.usingExtendedSonar){
+					drawImage.setColor(SONAR_SEAWEED);
+					drawImage.fillOval(
+							(-session.mapConfiguration.sonarRange),
+							(-session.mapConfiguration.sonarRange),
+							(session.mapConfiguration.sonarRange * 2),
+							(session.mapConfiguration.sonarRange * 2));
+				} else {
+					drawImage.setColor(EXTENDED_SONAR_SPONGEBOB);
+					drawImage.fillOval(
+							(-session.mapConfiguration.extendedSonarRange),
+							(-session.mapConfiguration.extendedSonarRange),
+							(session.mapConfiguration.extendedSonarRange * 2),
+							(session.mapConfiguration.extendedSonarRange * 2));
+				}
 
 				drawImage.setColor(HORNPUB_HEAT);
 				drawImage.fillOval(

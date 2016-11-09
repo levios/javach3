@@ -90,8 +90,11 @@ public class GameThread extends Thread {
 			game.lastTurnLength = currentTimeMillis() - timeBefore;
 
 			log.debug("Last turn took {}ms", game.lastTurnLength);
-			
-			Thread.sleep(game.mapConfiguration.roundLength - game.lastTurnLength+10);
+
+			long timeToSleep = game.mapConfiguration.roundLength - game.lastTurnLength;
+			while(timeToSleep < 0)
+				timeToSleep += 2.0;
+			Thread.sleep(timeToSleep);
 
 			cycleStartTime = System.nanoTime();
 

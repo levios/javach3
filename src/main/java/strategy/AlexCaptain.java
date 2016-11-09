@@ -2,17 +2,12 @@ package strategy;
 
 import game.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class AlexCaptain extends Captain {
 
-	private double shellshockcountdown;
-	private int otherCountdown;
 
 	public AlexCaptain() {
-		shellshockcountdown = 0.0;
-		otherCountdown = 0;
 	}
 
 	@Override
@@ -20,12 +15,12 @@ public class AlexCaptain extends Captain {
 		Submarine submarine = myShips.get(0);
 
 		log.info("SHELLSHOCK INC.");
-		submarine.actionQueue.add(Action.move(shellshockcountdown,
+		submarine.actionQueue.add(Action.move(2,
 				5
 		));
 		if (submarine.canShootTorpedo())
 			submarine.actionQueue.add(Action.shoot(33));
-		if (submarine.isSonarReady())
+		if (submarine.canUseExtendedSonar())
 			submarine.actionQueue.add(Action.activateSonar());
 	}
 

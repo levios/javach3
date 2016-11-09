@@ -2,66 +2,110 @@ package strategy;
 
 import game.*;
 
-import java.util.Deque;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.LinkedBlockingDeque;
 
 public class LeviCaptain extends Captain {
 
-//	private strategy.Strategy myStrategy = Strategy.MOVEAROUND;
-
-	private Deque<XVector> nextPositions;
+	private GameMap map;
 
 	public LeviCaptain() {
-		this.nextPositions = new LinkedBlockingDeque<>();
-		this.nextPositions.add(new XVector(200, 200));
-		this.nextPositions.add(new XVector(200, 600));
-		this.nextPositions.add(new XVector(1500, 600));
-		this.nextPositions.add(new XVector(1500, 200));
 	}
 
 	public void executeStrategy(GameMap map, List<Submarine> myShips) {
+
 		this.map = map;
 
-		if (myShips.size() > 0) {
-			Submarine explorer = myShips.get(0);
+		myShips.forEach(ship -> {
+			ship.actionQueue.clear();
 
-			if (false && !this.map.enemyShips.isEmpty()) {
-				explorer.actionQueue.clear();
-				PlayerObject enemyShip = this.map.enemyShips.get(0);
-				boolean willLikelyHit = explorer.shootAtTarget(enemyShip);
+			ship.tryActivateSonar();
 
-				explorer.gotoXY(enemyShip.position);
-			} else {
-
-				if (explorer.actionQueue.size() < 3) {
-					explorer.actionQueue.clear();
-					XVector nextTargetPosition = nextPositions.remove();
-					nextPositions.add(nextTargetPosition);
-					log.info("Ship[{}]: NextTargetPosition calculated. {}", explorer.id, nextTargetPosition);
-
-					explorer.gotoXY(nextTargetPosition);
+			if (!map.enemyShips.isEmpty() && ship.canShootTorpedo()) {
+				ProjectileLike enemyShip = ship.getClosestEnemyShip(map.enemyShips);
+				if (enemyShip != null) {
+					boolean willLikelyHit = ship.shootAtTarget(enemyShip);
+					ship.chaseTarget(enemyShip);
 				}
 			}
 
-			explorer.tryActivateSonar();
-		}
-
-		if (myShips.size() > 1){
-			Submarine battleship = myShips.get(1);
-
-			if (false && !this.map.enemyShips.isEmpty()) {
-				battleship.actionQueue.clear();
-				PlayerObject enemyShip = this.map.enemyShips.get(0);
-				boolean willLikelyHit = battleship.shootAtTarget(enemyShip);
-			} else {
-				if (battleship.actionQueue.size() < 3) {
-					battleship.actionQueue.clear();
-					battleship.gotoXY(battleship.position.add(new XVector(Math.random() * 400 - 100, Math.random() * 400 - 100)));
-				}
+			XVector current = ship.position;
+			// get next coordinate I want to go
+			if (ship.nextPositions.isEmpty()) {
+				// this will fill the nextPositions
+				ship.nextPositions = planNextMoves(ship, myShips.indexOf(ship) % 2 == 0);
 			}
 
-			battleship.tryActivateSonar();
+			XVector nextTargetPosition = ship.nextPositions.get(0);
+
+			// if I'm close enough, pop the Position out of the List AND add
+			// it to the end
+			if (current.distance(nextTargetPosition) < 100.0) {
+				ship.nextPositions.remove(0);
+				ship.nextPositions.add(nextTargetPosition);
+				nextTargetPosition = ship.nextPositions.get(0);
+			}
+
+			ship.gotoXY(nextTargetPosition);
+		});
+	}
+
+	public List<XVector> planNextMoves(Submarine submarine, boolean counterClockwise) {
+		return planRouteForShips(submarine, counterClockwise);
+	}
+
+	/**
+	 * Lesz egy megtervezett trajektoria, amin a hajok haladni fognak
+	 * Alap utvonal: 0,2,4, stb. ship-ek oramutato jarasaval megegyezoen, tobbi ellentetesen
+	 */
+	public List<XVector> planRouteForShips(Submarine ship, boolean counterClockwise) {
+		List<XVector> route = new ArrayList<>();
+		double sonarRange = Submarine.SONAR_RANGE;
+		double top = this.map.mapConfig.height - sonarRange;
+		double right = this.map.mapConfig.width - 300;
+		double longerSonarRange = sonarRange;
+		if (counterClockwise) {
+			//oramutato jarasaval megegyezoen
+			log.info("ship id {} goes up", ship.id);
+			//fent
+
+			for (int x = (int) ship.x(); x < right; x += 100) {
+				route.add(new XVector(x, top));
+			}
+			for (int y = (int) top; y > sonarRange; y -= 100) {
+				route.add(new XVector(right, y));
+			}
+			for (int x = (int) right; x > sonarRange; x -= 100) {
+				route.add(new XVector(x, sonarRange));
+			}
+			for (int y = (int) sonarRange; y < top; y += 100) {
+				route.add(new XVector(sonarRange, y));
+			}
+			for (int x = (int) sonarRange; x < ship.x(); x += 100) {
+				route.add(new XVector(x, top));
+			}
+		} else {
+			//oramutato jarasaval ellentetesen
+			log.info("ship id {} goes down", ship.id);
+			//alul && magasabban
+
+			for (int x = (int) ship.x(); x < right; x += 100) {
+				route.add(new XVector(x, longerSonarRange));
+			}
+			for (int y = (int) longerSonarRange; y < top; y += 100) {
+				route.add(new XVector(right, y));
+			}
+			for (int x = (int) right; x > longerSonarRange; x -= 100) {
+				route.add(new XVector(x, top));
+			}
+			for (int y = (int) top; y > longerSonarRange; y -= 100) {
+				route.add(new XVector(longerSonarRange, y));
+			}
+			for (int x = (int) longerSonarRange; x < ship.x(); x += 100) {
+				route.add(new XVector(x, longerSonarRange));
+			}
 		}
+
+		return route;
 	}
 }

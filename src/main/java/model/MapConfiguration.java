@@ -45,7 +45,7 @@ public class MapConfiguration {
 	public Integer sonarRange;
 	@SerializedName("extendedSonarRange")
 	@Expose
-	public Double extendedSonarRange;
+	public Integer extendedSonarRange;
 	@SerializedName("extendedSonarRounds")
 	@Expose
 	public Integer extendedSonarRounds;
