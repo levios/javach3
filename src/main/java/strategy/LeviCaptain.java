@@ -18,35 +18,65 @@ public class LeviCaptain extends Captain {
 
 		myShips.forEach(ship -> {
 			ship.actionQueue.clear();
-
+			ship.tempTargetPosition = null;
+			
 			ship.tryActivateSonar();
+			
+			ProjectileLike enemyShip = ship.getClosestEnemyShip(map.enemyShips);
 
-			if (!map.enemyShips.isEmpty() && ship.canShootTorpedo()) {
-				ProjectileLike enemyShip = ship.getClosestEnemyShip(map.enemyShips);
-				if (enemyShip != null) {
-					boolean willLikelyHit = ship.shootAtTarget(enemyShip);
-					ship.chaseTarget(enemyShip);
-				}
+			if (enemyShip != null) {
+				// boolean willLikelyHit = ship.shootAtTarget(enemyShip);
+				log.info("Ship[{}] chasing target", ship.id);
+				ship.chaseOrFleeTarget(enemyShip);
 			}
 
 			XVector current = ship.position;
-			// get next coordinate I want to go
-			if (ship.nextPositions.isEmpty()) {
-				// this will fill the nextPositions
-				ship.nextPositions = planNextMoves(ship, myShips.indexOf(ship) % 2 == 0);
-			}
+			
+			XVector nextTargetPosition = null;
+			
+			if (ship.tempTargetPosition != null) {
+				
+				nextTargetPosition = ship.tempTargetPosition;
+				
+//				// if I'm close enough, pop the Position out of the List AND add it to the end
+//				if (current.distance(nextTargetPosition) < 50.0) {
+//					ship.tempTargetPosition = null;
+//				}
+				
+			} 
+			else {
+//			if (ship.tempTargetPosition == null) {
 
-			XVector nextTargetPosition = ship.nextPositions.get(0);
+				// get next coordinate I want to go
+				if (ship.nextPositions.isEmpty()) {
+					// this will fill the nextPositions
+					ship.nextPositions = planNextMoves(ship, myShips.indexOf(ship) % 2 == 0);
+				}
 
-			// if I'm close enough, pop the Position out of the List AND add
-			// it to the end
-			if (current.distance(nextTargetPosition) < 100.0) {
-				ship.nextPositions.remove(0);
-				ship.nextPositions.add(nextTargetPosition);
 				nextTargetPosition = ship.nextPositions.get(0);
+
+				// if I'm close enough, pop the Position out of the List AND add it to the end
+				if (current.distance(nextTargetPosition) < 100.0) {
+					ship.nextPositions.remove(0);
+					ship.nextPositions.add(nextTargetPosition);
+					nextTargetPosition = ship.nextPositions.get(0);
+				}
 			}
 
 			ship.gotoXY(nextTargetPosition);
+			
+			if (enemyShip != null) {
+				if (!ship.wouldIHitMyAllyShip(ship, myShips.stream().filter(s-> s.id != ship.id).findAny(), enemyShip)) {
+					boolean willLikelyHit = ship.shootAtTarget(enemyShip);
+					if (willLikelyHit) {
+						log.info("Ship would likely hit");
+					} else {
+						log.info("Ship would NOT likely hit or would get damaged");
+					}
+				} else {
+					log.info("Ship would likely damage OTHER SHIP");
+				}
+			}
 		});
 	}
 

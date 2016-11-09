@@ -86,15 +86,22 @@ public class GameThread extends Thread {
 
 			game.updateGameInfo();
 			if (game.state == GameState.ENDED) continue;
-			game.nextRound();
-			game.lastTurnLength = currentTimeMillis() - timeBefore;
-
-			log.debug("Last turn took {}ms", game.lastTurnLength);
-
-			long timeToSleep = game.mapConfiguration.roundLength - game.lastTurnLength;
-			while(timeToSleep < 0)
-				timeToSleep += 2.0;
-			Thread.sleep(timeToSleep);
+			
+			try {
+				game.nextRound();
+				game.lastTurnLength = currentTimeMillis() - timeBefore;
+	
+				log.debug("Last turn took {}ms", game.lastTurnLength);
+	
+	//			long timeToSleep = game.mapConfiguration.roundLength - game.lastTurnLength + 100;
+	//			while(timeToSleep < 0)
+	//				timeToSleep += 2000;
+				Thread.sleep(game.mapConfiguration.roundLength);
+				
+			} catch(Exception e) {
+				e.printStackTrace();
+				Thread.sleep(game.mapConfiguration.roundLength);
+			}
 
 			cycleStartTime = System.nanoTime();
 

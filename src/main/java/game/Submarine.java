@@ -14,9 +14,10 @@ import org.slf4j.LoggerFactory;
 
 import com.sun.javafx.util.Utils;
 
+@SuppressWarnings("restriction")
 public class Submarine extends PlayerObject {
 
-	private static final int ELASTICITY_TRIES_MAX = 4;
+	private static final int ELASTICITY_TRIES_MAX = 3;
 	private static final int ELASTICITY_STEP = 1;
 	private static double SHOOT_PREDICTION_EPSILON;
 	private static int MAX_SHOOT_STEPS_PREDICT;
@@ -28,6 +29,7 @@ public class Submarine extends PlayerObject {
 	public static double MAX_STEERING;
 	public static double MAX_SPEED;
 	public static int TORPEDO_COOLDOWN;
+	public static int TORPEDO_EXPLOSION_RADIUS;
 	public static double SUBMARINE_RADIUS;
 
 	private final GameMap map;
@@ -53,7 +55,7 @@ public class Submarine extends PlayerObject {
 		MAX_ACCELERATION = rules.maxAccelerationPerRound;
 		MAX_STEERING = rules.maxSteeringPerRound;
 		MAX_SPEED = rules.maxSpeed;
-
+		TORPEDO_EXPLOSION_RADIUS = rules.torpedoExplosionRadius;
 		TORPEDO_COOLDOWN = rules.torpedoCooldown;
 		SUBMARINE_RADIUS = rules.submarineSize;
 
@@ -66,6 +68,7 @@ public class Submarine extends PlayerObject {
 	public int sonarDuration = 0;
 	public int torpedoCooldown = 0;
 	public boolean usingExtendedSonar = false;
+	public XVector tempTargetPosition = null;
 
 	public Submarine(long id, String owner, double x, double y, double speed, double rotation, GameMap map) {
 		super(id, owner, PlayerObjectType.SUBMARINE, x, y, SUBMARINE_RADIUS, speed, rotation);
@@ -208,7 +211,12 @@ public class Submarine extends PlayerObject {
 	}
 
 	public boolean shootAtTarget(ProjectileLike originalTarget) {
-		if (!this.canShootTorpedo()) return false;
+		if (!this.canShootTorpedo()) {
+			log.info("Ship[{}] I cant shoot", this.id);
+			return false;
+		}
+		
+		log.info("Ship[{}] Entering shootAtTarget #1", this.id);
 
 		ProjectileLike target = originalTarget.clone();
 
@@ -231,11 +239,28 @@ public class Submarine extends PlayerObject {
 					this.futureTorpedoPositions.add(torpedo.position);
 				}
 				XVector torpedoPositionAfterISteps = torpedo.position;
+				
+				//if "i" is little: we are likely to be damaged
+				if (i < 3) {
+					//predict my move after i steps
+					ProjectileLike ghostShip = (ProjectileLike) this.clone();
+					ghostShip.step(i);
+					if(ghostShip.position.distance(torpedoPositionAfterISteps) < Torpedo.TORPEDO_EXPLOSION
+							&& this.hp < Torpedo.TORPEDO_DAMAGE){
+						log.info("I would be too close to Explosion AND I have low life: I dont shoot");
+						return false;
+					}
+				}
+				
+				log.info("Ship[{}] Entering shootAtTarget #2", this.id);
+			
 				double distanceFromShipCenter = torpedoPositionAfterISteps.distance(target.position);
 				log.info("Shooting torpedo, ETA: {}, distance from ship center when landing: {}", i, distanceFromShipCenter);
-				this.actionQueue.add(Action.shoot(angle));
+				this.actionQueue.addFirst(Action.shoot(angle));
 				return true;
 			}
+			
+			log.info("Ship[{}] Entering shootAtTarget #3", this.id);
 		}
 		return false;
 	}
@@ -264,6 +289,49 @@ public class Submarine extends PlayerObject {
 
 		this.actionQueue.addAll(route.snd);
 	}
+	
+//	public void gotoXY(XVector nextTargetPosition) {
+//		log.info("Ship[{}]: NextTargetPosition calculated: {}", this.id, nextTargetPosition.getAngleInDegrees());
+//
+//		// calculate iranyvektor
+//		XVector targetVector = XVector.subtract(nextTargetPosition, this.position);
+//
+//		// calculate angle of target vector
+//		double targetVectorAngle = targetVector.getAngleInDegrees();
+//		log.info("Ship[{}]: TargetVectorAngle calculated: {}", this.id, targetVectorAngle);
+//
+//		// current angle is in "angle"
+//		log.info("Ship[{}]: Current angle: {}", this.id, this.rotation);
+//
+//		// calc wood-be-perfect angle
+//		double angleBetweenTwoVectors = targetVectorAngle - this.rotation;
+//		if (angleBetweenTwoVectors < -180.0) {
+//			angleBetweenTwoVectors += 360;
+//		} else if (angleBetweenTwoVectors > 180.0) {
+//			angleBetweenTwoVectors -= 360;
+//		}
+//		log.info("AngleBetweenTwoVectors calculated: {}", angleBetweenTwoVectors);
+//
+//		// calc turn
+//		double turn = Utils.clamp(-MAX_STEERING, angleBetweenTwoVectors, MAX_STEERING);
+//
+//		log.info("Ship[{}]: Turn calculated: {}", this.id, turn);
+//		// calculate speed - TODO
+//
+//		// validate that I wont crash into island or "palya szele" - TODO
+//
+//		// go
+//		double acceleration;
+//		if (this.speed >= MAX_SPEED)
+//			acceleration = 0;
+//		else
+//			acceleration = Utils.clamp(0, MAX_SPEED - this.speed, MAX_ACCELERATION);
+//
+//		log.info("Ship[{}]: Acceleration calculated: {}", this.id, acceleration);
+//
+//		// conn.move(session.gameId, this.id, acceleration, turn);
+//		this.actionQueue.add(Action.move(turn, acceleration));
+//	}
 
 	private static Pair<ProjectileLike, List<Action.MoveAction>> calculateSteps(ProjectileLike projectile, XVector startingPoint, XVector target, GameMap map, double elasticity) {
 		elasticity = Math.max(elasticity, 1);
@@ -348,33 +416,72 @@ public class Submarine extends PlayerObject {
 		return Math.abs(a-b) < 0.0000000001;
 	}
 
-	public void chaseTarget(ProjectileLike enemyShip) {
+	public void chaseOrFleeTarget(ProjectileLike enemyShip) {
 		ProjectileLike cloneShip = enemyShip.clone();
 
 		// project next position of enemy ship
 		cloneShip.step();
+		
+		// ha kozel van es  hamarosan lohetek
+		XVector nextTargetPosition = null;
+		if(this.position.distance(cloneShip.position) < TORPEDO_EXPLOSION_RADIUS && this.torpedoCooldown < 3){ // TODO: 50 ?
+			log.info("elkerulo taktika");
+			XVector oppositeDirection = cloneShip.position.subtract(this.position).negate();
+			nextTargetPosition = this.position.add(oppositeDirection);
+		} else {
+			nextTargetPosition =  cloneShip.position;
+		}
 
-		XVector nextTargetPosition =  cloneShip.position;
-
-		this.nextPositions.add(0, nextTargetPosition);
+		this.tempTargetPosition  = nextTargetPosition; // this.nextPositions.add(0, nextTargetPosition);
 	}
 
+	/**
+	 * This should return the closest ship not by distance BUT but number of steps
+	 */
 	public ProjectileLike getClosestEnemyShip(List<ProjectileLike> enemyShips) {
+		if(enemyShips.isEmpty()) return null;
+		
 		XVector current = this.position;
 
 		ProjectileLike closestEnemy = enemyShips.get(0);
 
 		for(ProjectileLike enemy : enemyShips){
-			if(current.distance(enemy.position) < current.distance(closestEnemy.position)){
+			if (numberOfStepsToReach(current, enemy.position) < numberOfStepsToReach(current, closestEnemy.position)) {
 				closestEnemy = enemy;
 			}
 		}
 
 		//ilyenkor nem adok vissza semmit
-		if(current.distance(closestEnemy.position) > 200)
+		if(current.distance(closestEnemy.position) > 250){
 			return null;
+		}
 
 		return closestEnemy;
+	}
+	
+	public int numberOfStepsToReach(XVector current, XVector target) {
+		Pair<ProjectileLike, List<Action.MoveAction>> route = null;
+		int minimumRouteLength = Integer.MAX_VALUE;
+		for (int i = 1; i < ELASTICITY_TRIES_MAX; i++) {
+			Pair<ProjectileLike, List<Action.MoveAction>> testRoute =
+					calculateSteps(this, this.position, target, this.map, i * ELASTICITY_STEP);
+
+			if (testRoute.snd.size() < minimumRouteLength){
+				route = testRoute;
+				minimumRouteLength = testRoute.snd.size();
+			}
+		}
+		assert route != null;
+
+		ProjectileLike simulator = this.clone();
+		this.futurePositions = route.snd.stream().map(a -> {
+			simulator.steer(a.steering);
+			simulator.accelerate(a.acceleration);
+			simulator.step();
+			return simulator.position;
+		}).collect(Collectors.toList());
+
+		return route.snd.size();
 	}
 
 	public boolean canUseExtendedSonar() {
@@ -383,5 +490,32 @@ public class Submarine extends PlayerObject {
 
 	public boolean canShootTorpedo() {
 		return this.torpedoCooldown == 0;
+	}
+
+	public boolean wouldIHitMyAllyShip(Submarine ship, Optional<Submarine> optional, ProjectileLike enemyShip) {
+		if (!this.canShootTorpedo()) {
+			return false;
+		}
+		
+		if(!optional.isPresent()){
+			return false;
+		}
+		
+		// safe to call get
+		ProjectileLike allyShip = optional.get().clone();
+		for (int i = 1; i <= MAX_SHOOT_STEPS_PREDICT; i++) {
+			allyShip.step();
+			double distance = ship.position.distance(allyShip.position);
+			double distanceInSteps = distance / Torpedo.TORPEDO_SPEED;
+			double error = distanceInSteps - i;
+
+			if (Math.abs(error) < SHOOT_PREDICTION_EPSILON) {
+				//ha koztunk van egy enemy ?
+				if(distance < ship.position.distance(enemyShip.position)){
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 }
